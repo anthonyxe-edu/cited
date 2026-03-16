@@ -1,40 +1,47 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SparklesCore } from "@/components/ui/sparkles";
+import { useTheme } from "@/lib/theme";
 
 const AUDIO_SRC = "/audio/cit-intro.mp3";
 const AUTOPLAY_DELAY_MS = 2200;
-const BAR_COUNT = 60;
+const BAR_COUNT = 64;
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60);
   return `${m.toString().padStart(2, "0")}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
 }
 
-function drawBars(canvas: HTMLCanvasElement, data: Uint8Array | null, active: boolean) {
+function drawBars(
+  canvas: HTMLCanvasElement,
+  data: Uint8Array | null,
+  active: boolean,
+  isDark: boolean,
+) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth;
-  const H = canvas.offsetHeight;
+  const W   = canvas.offsetWidth;
+  const H   = canvas.offsetHeight;
   if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
-    canvas.width = W * dpr;
+    canvas.width  = W * dpr;
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
   }
   ctx.clearRect(0, 0, W, H);
 
-  const cy = H / 2;
-  const barW = 2.5;
-  const gap = (W - BAR_COUNT * barW) / (BAR_COUNT + 1);
+  const cy   = H / 2;
+  const barW = 3;
+  const gap  = (W - BAR_COUNT * barW) / (BAR_COUNT + 1);
 
+  // Idle flat line
   if (!data || !active) {
-    // Idle: flat tiny bars
     for (let i = 0; i < BAR_COUNT; i++) {
       const x = gap + i * (barW + gap);
-      const h = 2;
-      ctx.fillStyle = "rgba(0,212,170,0.15)";
+      const pos = i / (BAR_COUNT - 1);
+      const env = Math.sin(pos * Math.PI);
+      const h = 1.5 + env * 2;
+      ctx.fillStyle = isDark ? "rgba(0,212,170,0.12)" : "rgba(0,100,80,0.15)";
       ctx.beginPath();
       ctx.roundRect(x, cy - h / 2, barW, h, 1);
       ctx.fill();
@@ -42,45 +49,52 @@ function drawBars(canvas: HTMLCanvasElement, data: Uint8Array | null, active: bo
     return;
   }
 
-  // Sample the time-domain data evenly across BAR_COUNT bars
   for (let i = 0; i < BAR_COUNT; i++) {
     const sampleIdx = Math.floor((i / BAR_COUNT) * data.length);
-    const raw = (data[sampleIdx] - 128) / 128; // -1 to 1
+    const raw = (data[sampleIdx] - 128) / 128;
 
-    // Envelope: bars taller in center, shorter at edges (like the reference image)
-    const pos = i / (BAR_COUNT - 1); // 0 to 1
-    const envelope = Math.sin(pos * Math.PI); // peaks at center
-    const amp = Math.abs(raw) * envelope;
+    // Sharper envelope — peaks high in center, falls steeply at edges
+    const pos = i / (BAR_COUNT - 1);
+    const env = Math.pow(Math.sin(pos * Math.PI), 0.6);
+
+    const amp  = Math.abs(raw) * env;
     const minH = 2;
-    const maxH = (H / 2) * 0.92;
-    const h = minH + amp * (maxH - minH);
+    const maxH = (H / 2) * 0.96;
+    const h    = minH + amp * (maxH - minH);
 
     const x = gap + i * (barW + gap);
 
-    // Color gradient: edges teal, center bright white-teal
-    const t = envelope; // 0 at edges, 1 at center
-    const r = Math.round(0   + t * 80);
-    const g = Math.round(180 + t * 75);
-    const b = Math.round(170 + t * 85);
-    const alpha = 0.4 + t * 0.6;
+    if (isDark) {
+      // Dark mode: bright teal → warm white-teal at center
+      const t = env;
+      const r = Math.round(t * 100);
+      const g = Math.round(185 + t * 70);
+      const b = Math.round(170 + t * 85);
+      const a = 0.35 + t * 0.65;
+      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    } else {
+      // Light mode: deep teal → navy at center
+      const t = env;
+      const r = Math.round(0   + t * 10);
+      const g = Math.round(80  + t * 60);
+      const b = Math.round(100 + t * 80);
+      const a = 0.45 + t * 0.55;
+      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    }
 
-    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-
-    // Draw bar upward
+    // Up
     ctx.beginPath();
     ctx.roundRect(x, cy - h, barW, h, [barW / 2, barW / 2, 0, 0]);
     ctx.fill();
-
-    // Draw bar downward (mirror)
+    // Down (mirror)
     ctx.beginPath();
     ctx.roundRect(x, cy, barW, h, [0, 0, barW / 2, barW / 2]);
     ctx.fill();
 
-    // Glow on tall bars
-    if (t > 0.5 && amp > 0.3) {
-      ctx.shadowColor = `rgba(0,229,181,${alpha * 0.8})`;
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.4})`;
+    // Glow on center peaks
+    if (env > 0.55 && amp > 0.25) {
+      ctx.shadowColor  = isDark ? "rgba(0,229,181,0.5)" : "rgba(0,120,100,0.35)";
+      ctx.shadowBlur   = 10;
       ctx.beginPath();
       ctx.roundRect(x, cy - h, barW, h * 2, barW / 2);
       ctx.fill();
@@ -94,6 +108,7 @@ interface CitHeroProps {
 }
 
 export function CitHero({ onEnded }: CitHeroProps) {
+  const { isDark } = useTheme();
   const [status, setStatus] = useState<"idle" | "playing" | "paused" | "ended" | "blocked">("idle");
   const [duration, setDuration] = useState(0);
 
@@ -106,18 +121,20 @@ export function CitHero({ onEnded }: CitHeroProps) {
   const timeRef     = useRef<HTMLSpanElement | null>(null);
   const animRef     = useRef<number | null>(null);
   const scrubRef    = useRef<HTMLDivElement | null>(null);
+  const isDarkRef   = useRef(isDark);
+  isDarkRef.current = isDark;
 
   function startViz() {
     const analyser = analyserRef.current;
-    const data = analyser ? new Uint8Array(analyser.fftSize) : null;
+    const data     = analyser ? new Uint8Array(analyser.fftSize) : null;
     function frame() {
       if (analyser && data) analyser.getByteTimeDomainData(data);
-      if (canvasRef.current) drawBars(canvasRef.current, data, true);
+      if (canvasRef.current) drawBars(canvasRef.current, data, true, isDarkRef.current);
       const a = audioRef.current;
       if (a && a.duration > 0) {
         const pct = (a.currentTime / a.duration) * 100;
-        if (fillRef.current)  fillRef.current.style.width  = `${pct}%`;
-        if (thumbRef.current) thumbRef.current.style.left  = `${pct}%`;
+        if (fillRef.current)  fillRef.current.style.width = `${pct}%`;
+        if (thumbRef.current) thumbRef.current.style.left = `${pct}%`;
         if (timeRef.current)  timeRef.current.textContent  = formatTime(a.currentTime);
       }
       animRef.current = requestAnimationFrame(frame);
@@ -127,7 +144,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function stopViz() {
     if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
-    if (canvasRef.current) drawBars(canvasRef.current, null, false);
+    if (canvasRef.current) drawBars(canvasRef.current, null, false, isDarkRef.current);
   }
 
   async function play() {
@@ -138,7 +155,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
         const ctx      = new AudioContext();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.82;
+        analyser.smoothingTimeConstant = 0.78;
         ctx.createMediaElementSource(audio).connect(analyser);
         analyser.connect(ctx.destination);
         audioCtxRef.current = ctx;
@@ -181,142 +198,109 @@ export function CitHero({ onEnded }: CitHeroProps) {
     audio.onended = () => {
       stopViz();
       setStatus("ended");
-      if (fillRef.current)  fillRef.current.style.width  = "100%";
-      if (thumbRef.current) thumbRef.current.style.left  = "100%";
+      if (fillRef.current)  fillRef.current.style.width = "100%";
+      if (thumbRef.current) thumbRef.current.style.left = "100%";
       if (timeRef.current && audio.duration)
         timeRef.current.textContent = formatTime(audio.duration);
       onEnded?.();
     };
 
     const t = setTimeout(() => play(), AUTOPLAY_DELAY_MS);
-
-    return () => {
-      clearTimeout(t);
-      audio.pause();
-      stopViz();
-      audioCtxRef.current?.close();
-    };
+    return () => { clearTimeout(t); audio.pause(); stopViz(); audioCtxRef.current?.close(); };
   }, []);
+
+  // Redraw on theme change when idle
+  useEffect(() => {
+    if (status !== "playing" && canvasRef.current) {
+      drawBars(canvasRef.current, null, false, isDark);
+    }
+  }, [isDark]);
 
   const isPlaying = status === "playing";
 
+  const accentColor    = isDark ? "#00D4AA" : "#006B57";
+  const labelColor     = isDark ? "rgba(255,255,255,0.85)" : "rgba(10,22,40,0.85)";
+  const subColor       = isDark ? "rgba(255,255,255,0.35)" : "rgba(10,22,40,0.4)";
+  const scrubTrack     = isDark ? "rgba(255,255,255,0.08)" : "rgba(10,22,40,0.1)";
+  const scrubFill      = isDark
+    ? "linear-gradient(90deg,#00D4AA,#00E5B5)"
+    : "linear-gradient(90deg,#006B57,#009B80)";
+
   return (
-    <div style={{
-      width: "100%", maxWidth: 540,
-      position: "relative",
-      borderRadius: 28,
-      overflow: "hidden",
-      background: "rgba(0,0,0,0.5)",
-      border: `1px solid rgba(0,212,170,${isPlaying ? "0.3" : "0.1"})`,
-      boxShadow: isPlaying
-        ? "0 0 80px rgba(0,212,170,0.15), 0 0 30px rgba(0,212,170,0.08), 0 16px 48px rgba(0,0,0,0.5)"
-        : "0 8px 32px rgba(0,0,0,0.4)",
-      transition: "box-shadow 0.8s ease, border-color 0.8s ease",
-    }}>
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
 
-      {/* Sparkles background */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
-        <SparklesCore
-          background="transparent"
-          minSize={0.3}
-          maxSize={1.2}
-          particleDensity={isPlaying ? 60 : 20}
-          particleColor="#00D4AA"
-          speed={isPlaying ? 1.5 : 0.4}
-          className="w-full h-full"
-        />
-      </div>
-
-      {/* Content */}
-      <div style={{
-        position: "relative", zIndex: 1,
-        padding: "22px 22px 18px",
-        display: "flex", flexDirection: "column", gap: 14,
-      }}>
-
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {/* Avatar */}
-          <div style={{
-            width: 42, height: 42, borderRadius: 13, flexShrink: 0,
-            background: "linear-gradient(135deg,#061018,#002A1F)",
-            border: `1.5px solid rgba(0,212,170,${isPlaying ? "0.7" : "0.25"})`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: isPlaying ? "0 0 20px rgba(0,212,170,0.4)" : "none",
-            transition: "border-color 0.4s, box-shadow 0.4s",
-          }}>
-            <span style={{
-              fontSize: 20, fontWeight: 900, color: "#00D4AA",
-              fontFamily: "system-ui,sans-serif",
-              display: "inline-block",
-              animation: isPlaying ? "cited-spin-burst 3.6s cubic-bezier(0.22,0,0.1,1) infinite" : "none",
-            }}>✚</span>
-          </div>
-
+      {/* Identity row — floating, no card */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{
+            fontSize: 22, fontWeight: 900, color: accentColor,
+            fontFamily: "system-ui,sans-serif",
+            display: "inline-block",
+            animation: isPlaying ? "cited-spin-burst 3.6s cubic-bezier(0.22,0,0.1,1) infinite" : "none",
+          }}>✚</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "white", letterSpacing: 0.4 }}>Cit</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>
-              {isPlaying ? "talking to you…" : status === "blocked" ? "tap to hear Cit" : status === "ended" ? "replay anytime" : "your research coach"}
+            <div style={{ fontSize: 13, fontWeight: 800, color: labelColor, letterSpacing: 0.5 }}>Cit</div>
+            <div style={{ fontSize: 11, color: subColor, marginTop: 1 }}>
+              {isPlaying ? "talking to you…"
+                : status === "blocked" ? "tap to hear Cit"
+                : status === "ended"   ? "replay anytime"
+                : "your research coach"}
             </div>
           </div>
+        </div>
 
-          {/* Play/pause */}
-          <button onClick={toggle} style={{
-            marginLeft: "auto", background: "none", border: "none",
-            cursor: "pointer", padding: 0,
+        {/* Minimal play/pause */}
+        <button onClick={toggle} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: isDark ? "rgba(0,212,170,0.1)" : "rgba(0,107,87,0.08)",
+            border: `1.5px solid ${isDark ? "rgba(0,212,170,0.3)" : "rgba(0,107,87,0.25)"}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.2s",
           }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 11,
-              background: isPlaying ? "rgba(0,212,170,0.12)" : "rgba(0,212,170,0.18)",
-              border: "1.5px solid rgba(0,212,170,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.2s",
-              boxShadow: isPlaying ? "0 0 12px rgba(0,212,170,0.3)" : "none",
-            }}>
-              {isPlaying
-                ? <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="4" height="10" rx="1.5" fill="#00D4AA"/><rect x="8" y="2" width="4" height="10" rx="1.5" fill="#00D4AA"/></svg>
-                : <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#00D4AA"/></svg>
-              }
-            </div>
-          </button>
-        </div>
-
-        {/* Bar waveform canvas */}
-        <canvas
-          ref={canvasRef}
-          style={{ width: "100%", height: 64, display: "block" }}
-        />
-
-        {/* Scrubber */}
-        <div>
-          <div ref={scrubRef} onClick={handleScrub}
-            style={{ height: 3, background: "rgba(255,255,255,0.07)", borderRadius: 9999, cursor: "pointer", position: "relative" }}>
-            <div ref={fillRef} style={{
-              height: "100%", width: "0%",
-              background: "linear-gradient(90deg,#00D4AA,#00E5B5)",
-              borderRadius: 9999,
-            }} />
-            <div ref={thumbRef} style={{
-              position: "absolute", top: "50%", left: "0%",
-              transform: "translate(-50%,-50%)",
-              width: 10, height: 10, borderRadius: "50%",
-              background: "#00D4AA",
-              boxShadow: "0 0 8px rgba(0,212,170,0.8)",
-              pointerEvents: "none",
-            }} />
+            {isPlaying
+              ? <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="4" height="10" rx="1.5" fill={accentColor}/><rect x="8" y="2" width="4" height="10" rx="1.5" fill={accentColor}/></svg>
+              : <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill={accentColor}/></svg>
+            }
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-            <span ref={timeRef} style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.3)" }}>00:00</span>
-            <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.18)" }}>{formatTime(duration)}</span>
-          </div>
-        </div>
-
-        {status === "blocked" && (
-          <p style={{ margin: 0, fontSize: 12, color: "rgba(0,212,170,0.7)", textAlign: "center" }}>
-            Tap play above to hear Cit introduce himself ↑
-          </p>
-        )}
+        </button>
       </div>
+
+      {/* Waveform — no container, just the canvas */}
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: 120, display: "block" }}
+      />
+
+      {/* Minimal scrubber */}
+      <div>
+        <div ref={scrubRef} onClick={handleScrub}
+          style={{ height: 2, background: scrubTrack, borderRadius: 9999, cursor: "pointer", position: "relative" }}>
+          <div ref={fillRef} style={{
+            height: "100%", width: "0%",
+            background: scrubFill,
+            borderRadius: 9999,
+          }} />
+          <div ref={thumbRef} style={{
+            position: "absolute", top: "50%", left: "0%",
+            transform: "translate(-50%,-50%)",
+            width: 9, height: 9, borderRadius: "50%",
+            background: accentColor,
+            boxShadow: `0 0 8px ${accentColor}80`,
+            pointerEvents: "none",
+          }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+          <span ref={timeRef} style={{ fontFamily: "monospace", fontSize: 10, color: subColor }}>00:00</span>
+          <span style={{ fontFamily: "monospace", fontSize: 10, color: subColor, opacity: 0.6 }}>{formatTime(duration)}</span>
+        </div>
+      </div>
+
+      {status === "blocked" && (
+        <p style={{ margin: 0, fontSize: 12, color: accentColor, textAlign: "center", opacity: 0.8 }}>
+          Tap play above to hear Cit ↑
+        </p>
+      )}
     </div>
   );
 }

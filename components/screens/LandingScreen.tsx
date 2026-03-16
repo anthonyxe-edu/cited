@@ -558,20 +558,48 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
     );
   }
 
+  // ── Theme-aware color tokens for landing ──────────────────────────────────
+  const landingBg       = isDark ? "#000000"                    : "#FFFFFF";
+  const logoText        = isDark ? "white"                      : "#0A1628";
+  const headlineColor   = isDark ? "white"                      : "#0A1628";
+  const subColor        = isDark ? "rgba(255,255,255,0.45)"     : "rgba(10,22,40,0.55)";
+  const mutedColor      = isDark ? "rgba(255,255,255,0.2)"      : "rgba(10,22,40,0.3)";
+  const inputBg         = isDark ? "rgba(255,255,255,0.05)"     : "rgba(10,22,40,0.04)";
+  const inputBorder     = isDark ? "rgba(255,255,255,0.1)"      : "rgba(10,22,40,0.12)";
+  const inputText       = isDark ? "white"                      : "#0A1628";
+  const inputDisabled   = isDark ? "rgba(255,255,255,0.08)"     : "rgba(10,22,40,0.06)";
+  const inputDisabledTx = isDark ? "rgba(255,255,255,0.3)"      : "rgba(10,22,40,0.3)";
+  const exBg            = isDark ? "rgba(0,212,170,0.07)"       : "rgba(0,107,87,0.06)";
+  const exBorder        = isDark ? "rgba(0,212,170,0.18)"       : "rgba(0,107,87,0.2)";
+  const exText          = isDark ? "rgba(255,255,255,0.55)"     : "rgba(10,22,40,0.6)";
+  const howBorder       = isDark ? "rgba(255,255,255,0.12)"     : "rgba(10,22,40,0.15)";
+  const howText         = isDark ? "rgba(255,255,255,0.5)"      : "rgba(10,22,40,0.55)";
+  const topBarBg        = isDark ? "rgba(255,255,255,0.05)"     : "rgba(10,22,40,0.05)";
+  const topBarBorder    = isDark ? "rgba(255,255,255,0.1)"      : "rgba(10,22,40,0.12)";
+  const topBarText      = isDark ? "rgba(255,255,255,0.5)"      : "rgba(10,22,40,0.55)";
+  const sparkleColor    = isDark ? "#00D4AA"                    : "#006B57";
+  const glowLine1       = isDark ? "rgba(0,212,170,0.8)"        : "rgba(0,107,87,0.5)";
+  const glowLine2       = isDark ? "rgba(0,229,181,0.9)"        : "rgba(0,155,128,0.6)";
+  const fadeBg          = isDark ? "#000"                       : "#fff";
+  const skipColor       = isDark ? "rgba(255,255,255,0.25)"     : "rgba(10,22,40,0.25)";
+  const skipHover       = isDark ? "rgba(255,255,255,0.55)"     : "rgba(10,22,40,0.55)";
+  const ambientGlow     = isDark ? "rgba(0,212,170,0.08)"       : "rgba(0,107,87,0.06)";
+
   return (
     <div
       className="cited-landing"
       style={{
         minHeight: "100vh",
-        background: "#000",
+        background: landingBg,
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         padding: "48px 24px",
         fontFamily: "system-ui, -apple-system, sans-serif",
         position: "relative", overflow: "hidden",
+        transition: "background 0.6s ease",
       }}
     >
-      {/* Full-screen sparkles — always present */}
+      {/* Full-screen sparkles */}
       <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
         <SparklesCore
           id="landing-sparkles"
@@ -579,13 +607,13 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
           minSize={0.4}
           maxSize={1.4}
           particleDensity={phase === "revealed" ? 50 : 30}
-          particleColor="#00D4AA"
+          particleColor={sparkleColor}
           speed={phase === "revealed" ? 1 : 0.5}
           className="w-full h-full"
         />
       </div>
 
-      {/* ── INTRO PHASE: Cit speaking ── */}
+      {/* ── INTRO PHASE ── */}
       <AnimatePresence>
         {phase === "intro" && (
           <motion.div
@@ -597,29 +625,38 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
               position: "fixed", inset: 0, zIndex: 10,
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              gap: 0,
             }}
           >
-            {/* Ambient glow behind CitHero */}
+            {/* Top-right theme toggle visible during intro */}
+            <div style={{ position: "absolute", top: 20, right: 24, display: "flex", gap: 8 }}>
+              <button onClick={toggle} aria-label="Toggle theme" style={{
+                background: topBarBg, border: `1px solid ${topBarBorder}`,
+                borderRadius: 10, padding: "8px 10px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+                color: topBarText, fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+              }}>
+                {isDark ? <Sun size={14} /> : <Moon size={14} />}
+                {isDark ? "Light" : "Dark"}
+              </button>
+            </div>
+
+            {/* Ambient glow */}
             <div style={{
-              position: "absolute",
-              width: 500, height: 500,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%)",
-              filter: "blur(40px)",
-              pointerEvents: "none",
+              position: "absolute", width: 600, height: 400, borderRadius: "50%",
+              background: `radial-gradient(circle, ${ambientGlow} 0%, transparent 70%)`,
+              filter: "blur(60px)", pointerEvents: "none",
             }} />
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 540, padding: "0 24px" }}
+              style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 600, padding: "0 32px" }}
             >
               <CitHero onEnded={() => setTimeout(reveal, 600)} />
             </motion.div>
 
-            {/* Skip button */}
+            {/* Skip */}
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -628,13 +665,12 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
               style={{
                 position: "absolute", bottom: 32,
                 background: "none", border: "none",
-                color: "rgba(255,255,255,0.25)", fontSize: 12,
+                color: skipColor, fontSize: 12,
                 cursor: "pointer", fontFamily: "inherit",
-                letterSpacing: "0.08em",
-                transition: "color 0.2s",
+                letterSpacing: "0.08em", transition: "color 0.2s",
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.25)")}
+              onMouseEnter={e => (e.currentTarget.style.color = skipHover)}
+              onMouseLeave={e => (e.currentTarget.style.color = skipColor)}
             >
               skip intro →
             </motion.button>
@@ -642,7 +678,7 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
         )}
       </AnimatePresence>
 
-      {/* ── REVEALED PHASE: full landing content ── */}
+      {/* ── REVEALED PHASE ── */}
       {phase === "revealed" && (
         <div style={{
           width: "100%", maxWidth: 620,
@@ -660,10 +696,10 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
                 Sign In
               </button>
               <button onClick={toggle} aria-label="Toggle theme" style={{
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                background: topBarBg, border: `1px solid ${topBarBorder}`,
                 borderRadius: 10, padding: "8px 10px", cursor: "pointer",
                 display: "flex", alignItems: "center", gap: 6,
-                color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+                color: topBarText, fontSize: 12, fontWeight: 600, fontFamily: "inherit",
               }}>
                 {isDark ? <Sun size={14} /> : <Moon size={14} />}
                 {isDark ? "Light" : "Dark"}
@@ -677,53 +713,50 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
               <div style={{
                 position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
                 width: 120, height: 120, borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(0,212,170,0.25) 0%, transparent 70%)",
+                background: `radial-gradient(circle, ${ambientGlow.replace("0.08", "0.3").replace("0.06", "0.2")} 0%, transparent 70%)`,
                 filter: "blur(20px)", pointerEvents: "none",
               }} />
-              <span style={{ fontSize: "clamp(48px, 9vw, 72px)", fontWeight: 900, color: "white", letterSpacing: "-3px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>CI</span>
+              <span style={{ fontSize: "clamp(48px, 9vw, 72px)", fontWeight: 900, color: logoText, letterSpacing: "-3px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>CI</span>
               <div style={{ animation: "cited-spin-burst 3.6s cubic-bezier(0.22, 0, 0.1, 1) infinite", display: "flex", alignItems: "center", margin: "0 2px" }}>
                 <CitedMark size={52} />
               </div>
-              <span style={{ fontSize: "clamp(48px, 9vw, 72px)", fontWeight: 900, color: "white", letterSpacing: "-3px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>ED</span>
+              <span style={{ fontSize: "clamp(48px, 9vw, 72px)", fontWeight: 900, color: logoText, letterSpacing: "-3px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>ED</span>
             </div>
           </Reveal>
 
-          {/* Sparkle line — below logo, above headline */}
+          {/* Sparkle + gradient lines */}
           <Reveal delay={0.15} y={0}>
             <div style={{ width: "min(480px, 90vw)", height: 80, position: "relative" }}>
-              {/* Teal gradient lines */}
               <div style={{
                 position: "absolute", top: 0, left: "12%", right: "12%", height: 2,
-                background: "linear-gradient(90deg, transparent, rgba(0,212,170,0.8), transparent)",
+                background: `linear-gradient(90deg, transparent, ${glowLine1}, transparent)`,
                 filter: "blur(1px)",
               }} />
               <div style={{
                 position: "absolute", top: 0, left: "12%", right: "12%", height: 1,
-                background: "linear-gradient(90deg, transparent, rgba(0,212,170,0.6), transparent)",
+                background: `linear-gradient(90deg, transparent, ${glowLine1}, transparent)`,
               }} />
               <div style={{
                 position: "absolute", top: 0, left: "32%", right: "32%", height: 4,
-                background: "linear-gradient(90deg, transparent, rgba(0,229,181,0.9), transparent)",
+                background: `linear-gradient(90deg, transparent, ${glowLine2}, transparent)`,
                 filter: "blur(2px)",
               }} />
               <div style={{
                 position: "absolute", top: 0, left: "32%", right: "32%", height: 1,
-                background: "linear-gradient(90deg, transparent, rgba(0,229,181,0.7), transparent)",
+                background: `linear-gradient(90deg, transparent, ${glowLine2}, transparent)`,
               }} />
-              {/* Sparkles in this zone */}
               <SparklesCore
                 background="transparent"
                 minSize={0.4}
                 maxSize={1}
-                particleDensity={800}
-                particleColor="#00D4AA"
+                particleDensity={600}
+                particleColor={sparkleColor}
                 speed={2}
                 className="w-full h-full"
               />
-              {/* Fade bottom */}
               <div style={{
                 position: "absolute", inset: 0,
-                background: "radial-gradient(ellipse 80% 60% at 50% 0%, transparent 20%, #000 100%)",
+                background: `radial-gradient(ellipse 80% 60% at 50% 0%, transparent 20%, ${fadeBg} 100%)`,
               }} />
             </div>
           </Reveal>
@@ -732,12 +765,12 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
           <Reveal delay={0.3}>
             <div style={{ textAlign: "center" }}>
               <h1 style={{
-                fontSize: "clamp(28px, 5.5vw, 46px)", fontWeight: 900, color: "white",
+                fontSize: "clamp(28px, 5.5vw, 46px)", fontWeight: 900, color: headlineColor,
                 margin: "0 0 14px 0", letterSpacing: "-1.5px", lineHeight: 1.1,
               }}>
                 Ask any health question.
               </h1>
-              <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", margin: 0, lineHeight: 1.7, maxWidth: 400 }}>
+              <p style={{ fontSize: 16, color: subColor, margin: 0, lineHeight: 1.7, maxWidth: 400 }}>
                 CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.
               </p>
             </div>
@@ -748,8 +781,7 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
             <form onSubmit={handleSubmit} style={{ width: "min(560px, 90vw)" }}>
               <div style={{
                 display: "flex", gap: 8,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: inputBg, border: `1px solid ${inputBorder}`,
                 borderRadius: 18, padding: "6px 6px 6px 22px",
               }}>
                 <input
@@ -759,16 +791,16 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
                   placeholder="e.g. Does magnesium improve sleep quality?"
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
-                    color: "white", fontSize: 16, padding: "11px 0", minWidth: 0,
+                    color: inputText, fontSize: 16, padding: "11px 0", minWidth: 0,
                   }}
                   autoFocus
                 />
                 <button type="submit" disabled={!query.trim()}
                   className={query.trim() ? "gradient-button" : undefined}
                   style={{
-                    background: query.trim() ? undefined : "rgba(255,255,255,0.08)",
+                    background: query.trim() ? undefined : inputDisabled,
                     border: "none", borderRadius: 13, padding: "12px 26px",
-                    color: query.trim() ? "white" : "rgba(255,255,255,0.3)",
+                    color: query.trim() ? "white" : inputDisabledTx,
                     fontSize: 15, fontWeight: 700,
                     cursor: query.trim() ? "pointer" : "default",
                     transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit",
@@ -784,9 +816,9 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 560 }}>
               {EXAMPLES.map((ex) => (
                 <button key={ex} onClick={() => setQuery(ex)} style={{
-                  background: "rgba(0,212,170,0.07)", border: "1px solid rgba(0,212,170,0.18)",
+                  background: exBg, border: `1px solid ${exBorder}`,
                   borderRadius: 100, padding: "7px 16px",
-                  color: "rgba(255,255,255,0.55)", fontSize: 13, cursor: "pointer",
+                  color: exText, fontSize: 13, cursor: "pointer",
                   transition: "all 0.15s", fontFamily: "inherit",
                 }}>
                   {ex}
@@ -795,9 +827,8 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
             </div>
           </Reveal>
 
-          {/* Trust line */}
           <Reveal delay={0.6}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", margin: 0, letterSpacing: "0.04em", textAlign: "center" }}>
+            <p style={{ fontSize: 12, color: mutedColor, margin: 0, letterSpacing: "0.04em", textAlign: "center" }}>
               Free to try · No account required · Backed by PubMed
             </p>
           </Reveal>
@@ -813,9 +844,9 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
                 View Plans
               </button>
               <button onClick={() => setView("how-it-works")} style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
+                background: "transparent", border: `1px solid ${howBorder}`,
                 borderRadius: 12, padding: "11px 24px",
-                color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 500,
+                color: howText, fontSize: 14, fontWeight: 500,
                 cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
               }}>
                 How does it work?
@@ -824,7 +855,7 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
           </Reveal>
 
           <Reveal delay={0.75}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)", margin: "-8px 0 0 0" }}>
+            <p style={{ fontSize: 12, color: mutedColor, margin: "-8px 0 0 0" }}>
               cited.health
             </p>
           </Reveal>
