@@ -33,29 +33,30 @@ function drawLine(
 
   const cy = H / 2;
 
-  // Build Y values: flat when idle, center-peaked when active
+  // Build Y values: flat when idle, gaussian-peaked center when active
   const ys: number[] = Array.from({ length: POINTS }, (_, i) => {
     if (!data || !active) return cy;
-    const pos     = i / (POINTS - 1);
-    const idx     = Math.floor(pos * data.length);
-    const raw     = (data[idx] - 128) / 128;          // -1..1
-    const env     = envelope(pos);
-    return cy + raw * env * cy * 0.9;
+    const pos = i / (POINTS - 1);
+    const idx = Math.floor(pos * data.length);
+    const raw = (data[idx] - 128) / 128;
+    return cy + raw * envelope(pos) * cy * 0.9;
   });
 
-  // ── Edge-to-center opacity gradient ──────────────────────────────────────
-  const lineGrad = ctx.createLinearGradient(0, 0, W, 0);
-  const c1 = isDark ? "rgba(0,212,170," : "rgba(0,107,87,";
-  const c2 = isDark ? "rgba(200,255,240," : "rgba(0,160,130,";
-  lineGrad.addColorStop(0,    `${c1}0)`);
-  lineGrad.addColorStop(0.08, `${c1}0.5)`);
-  lineGrad.addColorStop(0.35, `${c1}0.85)`);
-  lineGrad.addColorStop(0.5,  `${c2}1)`);   // bright white-teal hotspot
-  lineGrad.addColorStop(0.65, `${c1}0.85)`);
-  lineGrad.addColorStop(0.92, `${c1}0.5)`);
-  lineGrad.addColorStop(1,    `${c1}0)`);
+  // Gradient: fade transparent → teal → white-teal center → teal → transparent
+  const teal  = isDark ? "0,212,170"   : "0,107,87";
+  const white = isDark ? "210,255,240" : "0,160,130";
+  const grad  = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0,    `rgba(${teal},0)`);
+  grad.addColorStop(0.06, `rgba(${teal},0.6)`);
+  grad.addColorStop(0.3,  `rgba(${teal},0.9)`);
+  grad.addColorStop(0.5,  `rgba(${white},1)`);
+  grad.addColorStop(0.7,  `rgba(${teal},0.9)`);
+  grad.addColorStop(0.94, `rgba(${teal},0.6)`);
+  grad.addColorStop(1,    `rgba(${teal},0)`);
 
-  // ── Build smooth bezier path ──────────────────────────────────────────────
+  ctx.lineJoin = "round";
+  ctx.lineCap  = "round";
+
   function buildPath() {
     ctx!.beginPath();
     ctx!.moveTo(0, ys[0]);
@@ -68,42 +69,30 @@ function drawLine(
     ctx!.lineTo(W, ys[POINTS - 1]);
   }
 
-  // Pass 1 — wide outer glow
+  // Pass 1 — thin tight halo (not wide/boxy)
   buildPath();
-  ctx.strokeStyle = isDark ? "rgba(0,212,170,0.1)" : "rgba(0,107,87,0.08)";
-  ctx.lineWidth   = 22;
-  ctx.shadowColor = isDark ? "rgba(0,212,170,0.3)" : "rgba(0,107,87,0.2)";
-  ctx.shadowBlur  = 32;
-  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.strokeStyle = `rgba(${teal},0.18)`;
+  ctx.lineWidth   = 4;
+  ctx.shadowColor = `rgba(${teal},0.4)`;
+  ctx.shadowBlur  = 5;
   ctx.stroke();
 
-  // Pass 2 — mid glow
+  // Pass 2 — sharp 1.5px core with gradient
   buildPath();
-  ctx.strokeStyle = isDark ? "rgba(0,212,170,0.22)" : "rgba(0,140,110,0.2)";
-  ctx.lineWidth   = 7;
-  ctx.shadowBlur  = 16;
-  ctx.stroke();
-
-  // Pass 3 — bright core with gradient
-  buildPath();
-  ctx.strokeStyle = lineGrad;
+  ctx.strokeStyle = grad;
   ctx.lineWidth   = 1.5;
-  ctx.shadowColor = isDark ? "rgba(220,255,245,0.9)" : "rgba(0,180,140,0.7)";
-  ctx.shadowBlur  = 10;
+  ctx.shadowColor = `rgba(${white},0.85)`;
+  ctx.shadowBlur  = 3;
   ctx.stroke();
   ctx.shadowBlur  = 0;
 
-  // Center lens-flare hotspot (always, stronger when active)
-  const cx      = W / 2;
+  // Small precise center bloom
   const peakAmt = active && data ? Math.abs((data[data.length >> 1] - 128) / 128) : 0;
-  const spotR   = W * (0.15 + peakAmt * 0.08);
-  const spot    = ctx.createRadialGradient(cx, cy, 0, cx, cy, spotR);
-  const spotA1  = isDark ? (0.18 + peakAmt * 0.1) : (0.12 + peakAmt * 0.08);
-  const spotC   = isDark ? `rgba(210,255,240,${spotA1})` : `rgba(0,180,140,${spotA1})`;
-  spot.addColorStop(0,   spotC);
-  spot.addColorStop(0.5, isDark ? "rgba(0,212,170,0.04)" : "rgba(0,107,87,0.03)");
-  spot.addColorStop(1,   "rgba(0,0,0,0)");
-  ctx.fillStyle = spot;
+  const bloom   = ctx.createRadialGradient(W / 2, cy, 0, W / 2, cy, H * (1.2 + peakAmt));
+  bloom.addColorStop(0,   `rgba(${white},${0.1 + peakAmt * 0.08})`);
+  bloom.addColorStop(0.5, `rgba(${teal},0.04)`);
+  bloom.addColorStop(1,   `rgba(${teal},0)`);
+  ctx.fillStyle = bloom;
   ctx.fillRect(0, 0, W, H);
 }
 
