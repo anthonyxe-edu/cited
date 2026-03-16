@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CITED — Serif Font Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0A1628;
+    --navy-2: #0F1E35;
+    --navy-3: #132040;
+    --teal: #00D4AA;
+    --teal-light: #00E5B5;
+    --teal-dark: #00B894;
+    --text: #E8EDF5;
+    --text-sub: rgba(232,237,245,0.6);
+    --text-muted: rgba(232,237,245,0.32);
+    --border: rgba(255,255,255,0.08);
+    --surface: rgba(255,255,255,0.04);
+    --surface-2: rgba(255,255,255,0.07);
+  }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+  }
+
+  /* ── Tab selector ───────────────────────────────────── */
+  .selector {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .selector-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: system-ui, sans-serif;
+    margin-right: 4px;
+  }
+  .tab {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .tab:hover { border-color: rgba(0,212,170,0.3); background: rgba(0,212,170,0.05); }
+  .tab.active { border-color: var(--teal); background: rgba(0,212,170,0.08); }
+  .tab-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+  }
+  .tab.active .tab-name { color: var(--teal); }
+  .tab-pair {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: system-ui, sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Panels ─────────────────────────────────────────── */
+  .panel { display: none; padding: 48px 32px 80px; max-width: 1100px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ── Font families (applied per panel) ──────────────── */
+  .font-a { --display: 'Cormorant Garamond', serif; --body: 'Lora', serif; }
+  .font-b { --display: 'Fraunces', serif; --body: 'Newsreader', serif; }
+  .font-c { --display: 'Playfair Display', serif; --body: 'Source Serif 4', serif; }
+  .font-d { --display: 'Libre Baskerville', serif; --body: 'Crimson Pro', serif; }
+
+  .panel h1, .panel h2, .panel h3, .panel .display { font-family: var(--display); }
+  .panel p, .panel span.body, .panel .body-text { font-family: var(--body); }
+
+  /* ── Font label strip ─────────────────────────────────── */
+  .font-label-strip {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  .font-pill {
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: 8px;
+    padding: 10px 18px;
+  }
+  .font-pill-role {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-family: system-ui, sans-serif;
+    margin-bottom: 4px;
+  }
+  .font-pill-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── Section label ────────────────────────────────────── */
+  .section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: system-ui, sans-serif;
+    margin-bottom: 16px;
+  }
+
+  /* ── Mock divider ─────────────────────────────────────── */
+  .mock-section {
+    margin-bottom: 52px;
+  }
+
+  /* ── Landing hero mock ────────────────────────────────── */
+  .landing-mock {
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 52px 48px 44px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  .landing-mock::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%; transform: translateX(-50%);
+    width: 500px; height: 400px;
+    background: radial-gradient(ellipse, rgba(0,212,170,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .landing-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 20px;
+    font-family: system-ui, sans-serif;
+  }
+  .landing-h1 {
+    font-size: clamp(34px, 5vw, 58px);
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.08;
+    margin-bottom: 20px;
+  }
+  .landing-sub {
+    font-size: 18px;
+    color: var(--text-sub);
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto 32px;
+  }
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 7px 7px 7px 22px;
+    max-width: 520px;
+    margin: 0 auto 28px;
+  }
+  .search-input-mock {
+    flex: 1;
+    font-size: 15px;
+    color: var(--text-sub);
+    font-family: var(--body);
+    font-style: italic;
+  }
+  .search-btn {
+    /* Gradient button */
+    position: relative;
+    appearance: none;
+    cursor: pointer;
+    background: radial-gradient(150% 180.06% at 11.14% 140%, #00D4AA 37.35%, #005A48 61.36%, #032538 78.42%, #020F1C 89.52%, #010A14 100%);
+    border: none;
+    border-radius: 11px;
+    padding: 11px 22px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: system-ui, sans-serif;
+    white-space: nowrap;
+  }
+  .search-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(20deg, hsla(165,75%,60%,0.2), hsla(165,75%,40%,0.75));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .chips {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .chip {
+    background: rgba(0,212,170,0.06);
+    border: 1px solid rgba(0,212,170,0.15);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: rgba(232,237,245,0.55);
+    font-family: var(--body);
+  }
+
+  /* ── Results card mock ────────────────────────────────── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 640px) { .results-grid { grid-template-columns: 1fr; } }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 20px;
+  }
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .result-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+  }
+  .result-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  .result-body {
+    font-size: 14px;
+    color: var(--text-sub);
+    line-height: 1.72;
+  }
+  .result-tag {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-family: system-ui, sans-serif;
+  }
+  .cite-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.18);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--teal);
+    font-family: system-ui, sans-serif;
+    font-weight: 600;
+  }
+
+  /* ── Body text specimen ────────────────────────────────── */
+  .specimen-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 36px;
+  }
+  .specimen-h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .specimen-h2 em {
+    color: var(--teal);
+    font-style: italic;
+  }
+  .specimen-p {
+    font-size: 15.5px;
+    color: var(--text-sub);
+    line-height: 1.78;
+    margin-bottom: 14px;
+  }
+  .specimen-p strong { color: var(--text); font-weight: 600; }
+  .specimen-p em { font-style: italic; color: rgba(0,212,170,0.9); }
+  .specimen-sizes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .size-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .size-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: system-ui, sans-serif;
+    width: 40px;
+    flex-shrink: 0;
+  }
+
+  /* ── Number sizes demo ────────────────────────────────── */
+  .numbers-mock {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .num-block { text-align: center; }
+  .num-big {
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    font-variant-numeric: proportional-nums;
+  }
+  .num-big span { color: var(--teal); }
+  .num-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: system-ui, sans-serif;
+  }
+
+  /* ── Divider ────────────────────────────────────────── */
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="selector">
+  <span class="selector-label">Font Pairing</span>
+
+  <button class="tab active" onclick="switchFont('a', this)">
+    <span class="tab-name">The Scholar</span>
+    <span class="tab-pair">Cormorant Garamond + Lora</span>
+  </button>
+  <button class="tab" onclick="switchFont('b', this)">
+    <span class="tab-name">The Journal</span>
+    <span class="tab-pair">Fraunces + Newsreader</span>
+  </button>
+  <button class="tab" onclick="switchFont('c', this)">
+    <span class="tab-name">The Editorial</span>
+    <span class="tab-pair">Playfair Display + Source Serif 4</span>
+  </button>
+  <button class="tab" onclick="switchFont('d', this)">
+    <span class="tab-name">The Classical</span>
+    <span class="tab-pair">Libre Baskerville + Crimson Pro</span>
+  </button>
+</div>
+
+<!-- ── Panel A: Cormorant Garamond + Lora ── -->
+<div class="panel font-a active" id="panel-a">
+  <div class="font-label-strip">
+    <div class="font-pill">
+      <div class="font-pill-role">Display / Headings</div>
+      <div class="font-pill-name" style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600;">Cormorant Garamond</div>
+    </div>
+    <div class="font-pill">
+      <div class="font-pill-role">Body / UI Text</div>
+      <div class="font-pill-name" style="font-family:'Lora',serif;">Lora</div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Landing hero</div>
+    <div class="landing-mock">
+      <div class="landing-eyebrow">Evidence-based health research</div>
+      <h1 class="landing-h1">Ask any health question.</h1>
+      <p class="landing-sub body-text">CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.</p>
+      <div class="search-bar">
+        <span class="search-input-mock">Does magnesium improve sleep quality?</span>
+        <button class="search-btn">Search</button>
+      </div>
+      <div class="chips">
+        <span class="chip">Does creatine affect sleep quality?</span>
+        <span class="chip">Best evidence for cognitive longevity</span>
+        <span class="chip">Omega-3 dosage for cardiovascular health</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Result cards</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-tag">Nutrition</div>
+        <h3 class="result-title">Magnesium glycinate improves sleep onset latency</h3>
+        <p class="result-body body-text">A 2023 RCT found that 400mg magnesium glycinate reduced time-to-sleep by an average of 17 minutes compared to placebo. Effect was most pronounced in adults over 40 with baseline deficiency.</p>
+        <div class="cite-badge">↗ JAMA Sleep — 2023</div>
+      </div>
+      <div class="result-card">
+        <div class="result-tag">Supplements</div>
+        <h3 class="result-title">Creatine loading protocol: evidence summary</h3>
+        <p class="result-body body-text">Systematic review of 18 trials confirms 5g/day creatine monohydrate is as effective as loading protocols for long-term phosphocreatine saturation, with fewer GI side effects reported.</p>
+        <div class="cite-badge">↗ Sports Med Rev — 2022</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Body text specimen</div>
+    <div class="specimen-card">
+      <h2 class="specimen-h2">The evidence on <em>omega-3</em> and cognitive health</h2>
+      <p class="specimen-p body-text"><strong>EPA and DHA</strong>, the long-chain omega-3 fatty acids found in fatty fish and fish oil, have been the subject of extensive research in cognitive function. Multiple meta-analyses suggest a meaningful association between higher omega-3 intake and reduced risk of cognitive decline in middle age.</p>
+      <p class="specimen-p body-text">However, the picture is nuanced. While observational data is compelling, <em>randomized controlled trials in cognitively healthy adults</em> have shown modest or mixed results — suggesting omega-3s may be most protective as a preventive measure rather than a therapeutic one.</p>
+      <div class="specimen-sizes">
+        <div class="size-row">
+          <span class="size-label">32px</span>
+          <span style="font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:600; color:var(--text);">Ask any health question.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">22px</span>
+          <span style="font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--text);">Evidence-based answers, personalized to you.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">16px</span>
+          <span style="font-family:'Lora',serif; font-size:16px; color:var(--text-sub); line-height:1.7;">CITED searches peer-reviewed research and synthesizes findings for your specific biology and goals.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">13px</span>
+          <span style="font-family:'Lora',serif; font-size:13px; color:var(--text-muted);">Free to try · No account required · Backed by PubMed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Numbers &amp; data</div>
+    <div class="numbers-mock">
+      <div class="num-block"><div class="num-big">$<span>9</span><span style="font-size:32px">.99</span></div><div class="num-label">/month</div></div>
+      <div class="num-block"><div class="num-big"><span>25</span></div><div class="num-label">searches/mo</div></div>
+      <div class="num-block"><div class="num-big"><span>18</span><span style="font-size:32px; color:var(--text-sub)">k+</span></div><div class="num-label">studies indexed</div></div>
+      <div class="num-block"><div class="num-big"><span>4.8</span></div><div class="num-label">avg rating</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Panel B: Fraunces + Newsreader ── -->
+<div class="panel font-b" id="panel-b">
+  <div class="font-label-strip">
+    <div class="font-pill">
+      <div class="font-pill-role">Display / Headings</div>
+      <div class="font-pill-name" style="font-family:'Fraunces',serif; font-size:18px; font-weight:600;">Fraunces</div>
+    </div>
+    <div class="font-pill">
+      <div class="font-pill-role">Body / UI Text</div>
+      <div class="font-pill-name" style="font-family:'Newsreader',serif;">Newsreader</div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Landing hero</div>
+    <div class="landing-mock">
+      <div class="landing-eyebrow">Evidence-based health research</div>
+      <h1 class="landing-h1">Ask any health question.</h1>
+      <p class="landing-sub body-text">CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.</p>
+      <div class="search-bar">
+        <span class="search-input-mock">Does magnesium improve sleep quality?</span>
+        <button class="search-btn">Search</button>
+      </div>
+      <div class="chips">
+        <span class="chip">Does creatine affect sleep quality?</span>
+        <span class="chip">Best evidence for cognitive longevity</span>
+        <span class="chip">Omega-3 dosage for cardiovascular health</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Result cards</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-tag">Nutrition</div>
+        <h3 class="result-title">Magnesium glycinate improves sleep onset latency</h3>
+        <p class="result-body body-text">A 2023 RCT found that 400mg magnesium glycinate reduced time-to-sleep by an average of 17 minutes compared to placebo. Effect was most pronounced in adults over 40 with baseline deficiency.</p>
+        <div class="cite-badge">↗ JAMA Sleep — 2023</div>
+      </div>
+      <div class="result-card">
+        <div class="result-tag">Supplements</div>
+        <h3 class="result-title">Creatine loading protocol: evidence summary</h3>
+        <p class="result-body body-text">Systematic review of 18 trials confirms 5g/day creatine monohydrate is as effective as loading protocols for long-term phosphocreatine saturation, with fewer GI side effects reported.</p>
+        <div class="cite-badge">↗ Sports Med Rev — 2022</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Body text specimen</div>
+    <div class="specimen-card">
+      <h2 class="specimen-h2">The evidence on <em>omega-3</em> and cognitive health</h2>
+      <p class="specimen-p body-text"><strong>EPA and DHA</strong>, the long-chain omega-3 fatty acids found in fatty fish and fish oil, have been the subject of extensive research in cognitive function. Multiple meta-analyses suggest a meaningful association between higher omega-3 intake and reduced risk of cognitive decline in middle age.</p>
+      <p class="specimen-p body-text">However, the picture is nuanced. While observational data is compelling, <em>randomized controlled trials in cognitively healthy adults</em> have shown modest or mixed results — suggesting omega-3s may be most protective as a preventive measure rather than a therapeutic one.</p>
+      <div class="specimen-sizes">
+        <div class="size-row">
+          <span class="size-label">32px</span>
+          <span style="font-family:'Fraunces',serif; font-size:32px; font-weight:600; color:var(--text);">Ask any health question.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">22px</span>
+          <span style="font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--text);">Evidence-based answers, personalized to you.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">16px</span>
+          <span style="font-family:'Newsreader',serif; font-size:16px; color:var(--text-sub); line-height:1.7;">CITED searches peer-reviewed research and synthesizes findings for your specific biology and goals.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">13px</span>
+          <span style="font-family:'Newsreader',serif; font-size:13px; color:var(--text-muted);">Free to try · No account required · Backed by PubMed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Numbers &amp; data</div>
+    <div class="numbers-mock">
+      <div class="num-block"><div class="num-big">$<span>9</span><span style="font-size:32px">.99</span></div><div class="num-label">/month</div></div>
+      <div class="num-block"><div class="num-big"><span>25</span></div><div class="num-label">searches/mo</div></div>
+      <div class="num-block"><div class="num-big"><span>18</span><span style="font-size:32px; color:var(--text-sub)">k+</span></div><div class="num-label">studies indexed</div></div>
+      <div class="num-block"><div class="num-big"><span>4.8</span></div><div class="num-label">avg rating</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Panel C: Playfair Display + Source Serif 4 ── -->
+<div class="panel font-c" id="panel-c">
+  <div class="font-label-strip">
+    <div class="font-pill">
+      <div class="font-pill-role">Display / Headings</div>
+      <div class="font-pill-name" style="font-family:'Playfair Display',serif; font-size:18px; font-weight:700;">Playfair Display</div>
+    </div>
+    <div class="font-pill">
+      <div class="font-pill-role">Body / UI Text</div>
+      <div class="font-pill-name" style="font-family:'Source Serif 4',serif;">Source Serif 4</div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Landing hero</div>
+    <div class="landing-mock">
+      <div class="landing-eyebrow">Evidence-based health research</div>
+      <h1 class="landing-h1">Ask any health question.</h1>
+      <p class="landing-sub body-text">CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.</p>
+      <div class="search-bar">
+        <span class="search-input-mock">Does magnesium improve sleep quality?</span>
+        <button class="search-btn">Search</button>
+      </div>
+      <div class="chips">
+        <span class="chip">Does creatine affect sleep quality?</span>
+        <span class="chip">Best evidence for cognitive longevity</span>
+        <span class="chip">Omega-3 dosage for cardiovascular health</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Result cards</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-tag">Nutrition</div>
+        <h3 class="result-title">Magnesium glycinate improves sleep onset latency</h3>
+        <p class="result-body body-text">A 2023 RCT found that 400mg magnesium glycinate reduced time-to-sleep by an average of 17 minutes compared to placebo. Effect was most pronounced in adults over 40 with baseline deficiency.</p>
+        <div class="cite-badge">↗ JAMA Sleep — 2023</div>
+      </div>
+      <div class="result-card">
+        <div class="result-tag">Supplements</div>
+        <h3 class="result-title">Creatine loading protocol: evidence summary</h3>
+        <p class="result-body body-text">Systematic review of 18 trials confirms 5g/day creatine monohydrate is as effective as loading protocols for long-term phosphocreatine saturation, with fewer GI side effects reported.</p>
+        <div class="cite-badge">↗ Sports Med Rev — 2022</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Body text specimen</div>
+    <div class="specimen-card">
+      <h2 class="specimen-h2">The evidence on <em>omega-3</em> and cognitive health</h2>
+      <p class="specimen-p body-text"><strong>EPA and DHA</strong>, the long-chain omega-3 fatty acids found in fatty fish and fish oil, have been the subject of extensive research in cognitive function. Multiple meta-analyses suggest a meaningful association between higher omega-3 intake and reduced risk of cognitive decline in middle age.</p>
+      <p class="specimen-p body-text">However, the picture is nuanced. While observational data is compelling, <em>randomized controlled trials in cognitively healthy adults</em> have shown modest or mixed results — suggesting omega-3s may be most protective as a preventive measure rather than a therapeutic one.</p>
+      <div class="specimen-sizes">
+        <div class="size-row">
+          <span class="size-label">32px</span>
+          <span style="font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--text);">Ask any health question.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">22px</span>
+          <span style="font-family:'Playfair Display',serif; font-size:22px; font-weight:600; color:var(--text);">Evidence-based answers, personalized to you.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">16px</span>
+          <span style="font-family:'Source Serif 4',serif; font-size:16px; color:var(--text-sub); line-height:1.7;">CITED searches peer-reviewed research and synthesizes findings for your specific biology and goals.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">13px</span>
+          <span style="font-family:'Source Serif 4',serif; font-size:13px; color:var(--text-muted);">Free to try · No account required · Backed by PubMed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Numbers &amp; data</div>
+    <div class="numbers-mock">
+      <div class="num-block"><div class="num-big">$<span>9</span><span style="font-size:32px">.99</span></div><div class="num-label">/month</div></div>
+      <div class="num-block"><div class="num-big"><span>25</span></div><div class="num-label">searches/mo</div></div>
+      <div class="num-block"><div class="num-big"><span>18</span><span style="font-size:32px; color:var(--text-sub)">k+</span></div><div class="num-label">studies indexed</div></div>
+      <div class="num-block"><div class="num-big"><span>4.8</span></div><div class="num-label">avg rating</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Panel D: Libre Baskerville + Crimson Pro ── -->
+<div class="panel font-d" id="panel-d">
+  <div class="font-label-strip">
+    <div class="font-pill">
+      <div class="font-pill-role">Display / Headings</div>
+      <div class="font-pill-name" style="font-family:'Libre Baskerville',serif; font-size:18px; font-weight:700;">Libre Baskerville</div>
+    </div>
+    <div class="font-pill">
+      <div class="font-pill-role">Body / UI Text</div>
+      <div class="font-pill-name" style="font-family:'Crimson Pro',serif; font-size:19px; font-weight:400;">Crimson Pro</div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Landing hero</div>
+    <div class="landing-mock">
+      <div class="landing-eyebrow">Evidence-based health research</div>
+      <h1 class="landing-h1">Ask any health question.</h1>
+      <p class="landing-sub body-text">CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.</p>
+      <div class="search-bar">
+        <span class="search-input-mock">Does magnesium improve sleep quality?</span>
+        <button class="search-btn">Search</button>
+      </div>
+      <div class="chips">
+        <span class="chip">Does creatine affect sleep quality?</span>
+        <span class="chip">Best evidence for cognitive longevity</span>
+        <span class="chip">Omega-3 dosage for cardiovascular health</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Result cards</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-tag">Nutrition</div>
+        <h3 class="result-title">Magnesium glycinate improves sleep onset latency</h3>
+        <p class="result-body body-text">A 2023 RCT found that 400mg magnesium glycinate reduced time-to-sleep by an average of 17 minutes compared to placebo. Effect was most pronounced in adults over 40 with baseline deficiency.</p>
+        <div class="cite-badge">↗ JAMA Sleep — 2023</div>
+      </div>
+      <div class="result-card">
+        <div class="result-tag">Supplements</div>
+        <h3 class="result-title">Creatine loading protocol: evidence summary</h3>
+        <p class="result-body body-text">Systematic review of 18 trials confirms 5g/day creatine monohydrate is as effective as loading protocols for long-term phosphocreatine saturation, with fewer GI side effects reported.</p>
+        <div class="cite-badge">↗ Sports Med Rev — 2022</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Body text specimen</div>
+    <div class="specimen-card">
+      <h2 class="specimen-h2">The evidence on <em>omega-3</em> and cognitive health</h2>
+      <p class="specimen-p body-text"><strong>EPA and DHA</strong>, the long-chain omega-3 fatty acids found in fatty fish and fish oil, have been the subject of extensive research in cognitive function. Multiple meta-analyses suggest a meaningful association between higher omega-3 intake and reduced risk of cognitive decline in middle age.</p>
+      <p class="specimen-p body-text">However, the picture is nuanced. While observational data is compelling, <em>randomized controlled trials in cognitively healthy adults</em> have shown modest or mixed results — suggesting omega-3s may be most protective as a preventive measure rather than a therapeutic one.</p>
+      <div class="specimen-sizes">
+        <div class="size-row">
+          <span class="size-label">32px</span>
+          <span style="font-family:'Libre Baskerville',serif; font-size:32px; font-weight:700; color:var(--text);">Ask any health question.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">22px</span>
+          <span style="font-family:'Libre Baskerville',serif; font-size:22px; font-weight:700; color:var(--text);">Evidence-based answers, personalized to you.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">16px</span>
+          <span style="font-family:'Crimson Pro',serif; font-size:17px; color:var(--text-sub); line-height:1.7;">CITED searches peer-reviewed research and synthesizes findings for your specific biology and goals.</span>
+        </div>
+        <div class="size-row">
+          <span class="size-label">13px</span>
+          <span style="font-family:'Crimson Pro',serif; font-size:14px; color:var(--text-muted);">Free to try · No account required · Backed by PubMed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-section">
+    <div class="section-label">Numbers &amp; data</div>
+    <div class="numbers-mock">
+      <div class="num-block"><div class="num-big">$<span>9</span><span style="font-size:32px">.99</span></div><div class="num-label">/month</div></div>
+      <div class="num-block"><div class="num-big"><span>25</span></div><div class="num-label">searches/mo</div></div>
+      <div class="num-block"><div class="num-big"><span>18</span><span style="font-size:32px; color:var(--text-sub)">k+</span></div><div class="num-label">studies indexed</div></div>
+      <div class="num-block"><div class="num-big"><span>4.8</span></div><div class="num-label">avg rating</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchFont(key, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + key).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

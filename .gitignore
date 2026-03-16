@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Next.js build output
+.next/
+out/
+
+# Misc
+.DS_Store
+*.pem
+npm-debug.log*
+.vercel
