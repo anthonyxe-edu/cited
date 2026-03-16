@@ -18,6 +18,7 @@ import type { Screen, SavedEntry, ContextQuestion, UserProfile, EvidenceResult }
 import { CitedText } from "@/components/ui/CitedText";
 import { ShareSheet } from "@/components/ui/ShareSheet";
 import { EvBadge, Badge, VerifiedBadge, DbBadge } from "@/components/ui/Badges";
+import { SparklesCore } from "@/components/ui/sparkles";
 import { Icon, IDs } from "@/components/ui/Icons";
 
 function SavedView({ item, onBack }: { item: SavedEntry; onBack: () => void }) {
@@ -93,6 +94,24 @@ function SavedView({ item, onBack }: { item: SavedEntry; onBack: () => void }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function GlobalBackground() {
+  const { isDark } = useTheme();
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <SparklesCore
+        id="global-bg-sparkles"
+        background="transparent"
+        minSize={0.5}
+        maxSize={1.1}
+        particleDensity={18}
+        particleColor={isDark ? "#00D4AA" : "#006B57"}
+        speed={0.4}
+        className="w-full h-full"
+      />
     </div>
   );
 }
@@ -286,9 +305,12 @@ function AppInner() {
 
   if (!authReady) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0A1628", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: 32, fontWeight: 900, color: "#00D4AA", fontFamily: "system-ui,sans-serif" }}>✚</span>
-      </div>
+      <>
+        <GlobalBackground />
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1 }}>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "#00D4AA", fontFamily: "system-ui,sans-serif" }}>✚</span>
+        </div>
+      </>
     );
   }
 
@@ -311,6 +333,7 @@ function AppInner() {
 
   return (
     <>
+      <GlobalBackground />
       {/* Guest mode banner */}
       {guestMode && !user && (
         <div style={{

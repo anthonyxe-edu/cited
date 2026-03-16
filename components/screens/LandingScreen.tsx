@@ -599,20 +599,6 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
         transition: "background 0.6s ease",
       }}
     >
-      {/* Full-screen sparkles */}
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-        <SparklesCore
-          id="landing-sparkles"
-          background="transparent"
-          minSize={0.4}
-          maxSize={1.4}
-          particleDensity={phase === "revealed" ? 50 : 30}
-          particleColor={sparkleColor}
-          speed={phase === "revealed" ? 1 : 0.5}
-          className="w-full h-full"
-        />
-      </div>
-
       {/* ── INTRO PHASE ── */}
       <AnimatePresence>
         {phase === "intro" && (

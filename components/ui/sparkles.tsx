@@ -1,9 +1,10 @@
 "use client";
-import React, { useId, useMemo } from "react";
+import React, { useId } from "react";
 import { useEffect, useState } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import type { Container, SingleOrMultiple } from "@tsparticles/engine";
 import { loadSlim } from "@tsparticles/slim";
+import { loadTextShape } from "@tsparticles/shape-text";
 import { cn } from "@/lib/utils";
 import { motion, useAnimation } from "framer-motion";
 
@@ -33,6 +34,7 @@ export const SparklesCore = (props: ParticlesProps) => {
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
+      await loadTextShape(engine);
     }).then(() => {
       setInit(true);
     });
@@ -161,8 +163,15 @@ export const SparklesCore = (props: ParticlesProps) => {
               shape: {
                 close: true,
                 fill: true,
-                options: {},
-                type: "circle",
+                type: "text",
+                options: {
+                  text: {
+                    value: ["✚"],
+                    font: "system-ui, sans-serif",
+                    style: "",
+                    weight: "700",
+                  },
+                },
               },
               size: {
                 value: { min: minSize || 0.5, max: maxSize || 2 },
