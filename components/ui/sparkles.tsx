@@ -2,14 +2,15 @@
 import React, { useId } from "react";
 import { useEffect, useState } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
-import type { Container, IShapeDrawer, SingleOrMultiple } from "@tsparticles/engine";
+import type { Container, IShapeDrawer, IShapeDrawData, SingleOrMultiple } from "@tsparticles/engine";
 import { loadSlim } from "@tsparticles/slim";
 import { cn } from "@/lib/utils";
 import { motion, useAnimation } from "framer-motion";
 
 // ── Custom ✚ cross shape ─────────────────────────────────────────────────────
 class CrossShapeDrawer implements IShapeDrawer {
-  draw(context: CanvasRenderingContext2D, _particle: unknown, radius: number) {
+  validTypes = ["cited-cross"] as const;
+  draw({ context, radius }: IShapeDrawData) {
     const arm = radius * 0.32;
     context.beginPath();
     context.moveTo(-arm, -radius);
@@ -48,7 +49,7 @@ export const SparklesCore = (props: ParticlesProps) => {
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
-      engine.addShape("cited-cross", new CrossShapeDrawer());
+      engine.addShape(new CrossShapeDrawer());
     }).then(() => setInit(true));
   }, []);
 
