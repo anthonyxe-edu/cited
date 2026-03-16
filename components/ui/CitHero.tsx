@@ -89,7 +89,11 @@ function drawBars(canvas: HTMLCanvasElement, data: Uint8Array | null, active: bo
   }
 }
 
-export function CitHero() {
+interface CitHeroProps {
+  onEnded?: () => void;
+}
+
+export function CitHero({ onEnded }: CitHeroProps) {
   const [status, setStatus] = useState<"idle" | "playing" | "paused" | "ended" | "blocked">("idle");
   const [duration, setDuration] = useState(0);
 
@@ -181,6 +185,7 @@ export function CitHero() {
       if (thumbRef.current) thumbRef.current.style.left  = "100%";
       if (timeRef.current && audio.duration)
         timeRef.current.textContent = formatTime(audio.duration);
+      onEnded?.();
     };
 
     const t = setTimeout(() => play(), AUTOPLAY_DELAY_MS);

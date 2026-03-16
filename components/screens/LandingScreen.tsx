@@ -4,10 +4,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import NumberFlow from "@number-flow/react";
 import confetti from "canvas-confetti";
 import { CitHero } from "@/components/ui/CitHero";
+import { SparklesCore } from "@/components/ui/sparkles";
 
 interface LandingScreenProps {
   onSelectPlan: (plan: "free" | "basic" | "pro") => void;
@@ -510,17 +511,35 @@ function PlansView({ onSelectPlan, onBack }: { onSelectPlan: (p: "free" | "basic
   );
 }
 
+// ─── Fade-in wrapper ──────────────────────────────────────────────────────────
+function Reveal({ children, delay = 0, y = 24 }: { children: React.ReactNode; delay?: number; y?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 // ─── Main landing ─────────────────────────────────────────────────────────────
 export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = "home" }: LandingScreenProps) {
   const { C, isDark, toggle } = useTheme();
-  const [query, setQuery] = useState("");
-  const [view, setView] = useState<"home" | "plans" | "how-it-works">(initialView);
+  const [query, setQuery]   = useState("");
+  const [view, setView]     = useState<"home" | "plans" | "how-it-works">(initialView);
+  const [phase, setPhase]   = useState<"intro" | "revealed">("intro");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
     onSearch(q);
+  }
+
+  function reveal() {
+    setPhase("revealed");
   }
 
   if (view === "how-it-works") {
@@ -539,22 +558,12 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
     );
   }
 
-  const textPrimary = isDark ? "white" : C.text;
-  const textSub     = isDark ? "rgba(255,255,255,0.5)"  : C.ts;
-  const textMuted   = isDark ? "rgba(255,255,255,0.28)" : C.tt;
-  const inputBg     = isDark ? "rgba(255,255,255,0.05)" : C.surface;
-  const inputBorder = isDark ? "rgba(255,255,255,0.1)"  : C.border;
-  const exBg        = isDark ? "rgba(0,212,170,0.07)"   : `${C.primary}12`;
-  const exBorder    = isDark ? "rgba(0,212,170,0.18)"   : `${C.primary}30`;
-  const exText      = isDark ? "rgba(255,255,255,0.6)"  : C.ts;
-  const howBorder   = isDark ? "rgba(255,255,255,0.12)" : C.border;
-  const howText     = isDark ? "rgba(255,255,255,0.55)" : C.ts;
-
   return (
     <div
       className="cited-landing"
       style={{
-        minHeight: "100vh", background: C.bg,
+        minHeight: "100vh",
+        background: "#000",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         padding: "48px 24px",
@@ -562,154 +571,265 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
         position: "relative", overflow: "hidden",
       }}
     >
-      {/* Top-right actions */}
-      <div style={{ position: "absolute", top: 20, right: 24, zIndex: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <button
-          onClick={onSignIn}
-          className="gradient-button"
-          style={{
-            border: "none",
-            borderRadius: 10, padding: "8px 16px", cursor: "pointer",
-            color: "white", fontSize: 12, fontWeight: 700,
-            fontFamily: "inherit",
-          }}
-        >
-          Sign In
-        </button>
-        <button
-          onClick={toggle}
-          aria-label="Toggle theme"
-          style={{
-            background: inputBg, border: `1px solid ${inputBorder}`,
-            borderRadius: 10, padding: "8px 10px", cursor: "pointer",
-            display: "flex", alignItems: "center", gap: 6,
-            color: textSub, fontSize: 12, fontWeight: 600,
-            fontFamily: "inherit",
-          }}
-        >
-          {isDark ? <Sun size={14} /> : <Moon size={14} />}
-          {isDark ? "Light" : "Dark"}
-        </button>
+      {/* Full-screen sparkles — always present */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <SparklesCore
+          id="landing-sparkles"
+          background="transparent"
+          minSize={0.4}
+          maxSize={1.4}
+          particleDensity={phase === "revealed" ? 50 : 30}
+          particleColor="#00D4AA"
+          speed={phase === "revealed" ? 1 : 0.5}
+          className="w-full h-full"
+        />
       </div>
 
-      <div style={{
-        position: "absolute", top: "20%", left: "50%", transform: "translate(-50%, -50%)",
-        width: 600, height: 600, borderRadius: "50%",
-        background: `radial-gradient(circle, rgba(0,212,170,${isDark ? "0.07" : "0.04"}) 0%, transparent 70%)`,
-        pointerEvents: "none",
-      }} />
+      {/* ── INTRO PHASE: Cit speaking ── */}
+      <AnimatePresence>
+        {phase === "intro" && (
+          <motion.div
+            key="intro"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 10,
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              gap: 0,
+            }}
+          >
+            {/* Ambient glow behind CitHero */}
+            <div style={{
+              position: "absolute",
+              width: 500, height: 500,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%)",
+              filter: "blur(40px)",
+              pointerEvents: "none",
+            }} />
 
-      <div style={{
-        width: "100%", maxWidth: 600,
-        display: "flex", flexDirection: "column", alignItems: "center",
-        gap: 36, position: "relative", zIndex: 1,
-      }}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
-          <div style={{
-            position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
-            width: 90, height: 90, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(0,212,170,0.22) 0%, transparent 70%)",
-            filter: "blur(18px)", pointerEvents: "none",
-          }} />
-          <span style={{ fontSize: "clamp(38px, 8vw, 54px)", fontWeight: 900, color: "white", letterSpacing: "-2px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>CI</span>
-          <div style={{ animation: "cited-spin-burst 3.6s cubic-bezier(0.22, 0, 0.1, 1) infinite", display: "flex", alignItems: "center", margin: "0 1px" }}>
-            <CitedMark size={40} />
-          </div>
-          <span style={{ fontSize: "clamp(38px, 8vw, 54px)", fontWeight: 900, color: "white", letterSpacing: "-2px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>ED</span>
-        </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 540, padding: "0 24px" }}
+            >
+              <CitHero onEnded={() => setTimeout(reveal, 600)} />
+            </motion.div>
 
-        {/* Cit Hero — audio intro */}
-        <CitHero />
-
-        {/* Headline */}
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{
-            fontSize: "clamp(30px, 6vw, 50px)", fontWeight: 900, color: textPrimary,
-            margin: "0 0 14px 0", letterSpacing: "-1.5px", lineHeight: 1.1,
-          }}>
-            Ask any health question.
-          </h1>
-          <p style={{ fontSize: 17, color: textSub, margin: 0, lineHeight: 1.65, maxWidth: 420 }}>
-            CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.
-          </p>
-        </div>
-
-        {/* Search */}
-        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          <div style={{
-            display: "flex", gap: 8,
-            background: inputBg, border: `1px solid ${inputBorder}`,
-            borderRadius: 18, padding: "6px 6px 6px 22px",
-          }}>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. Does magnesium improve sleep quality?"
+            {/* Skip button */}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 3, duration: 1 }}
+              onClick={reveal}
               style={{
-                flex: 1, background: "transparent", border: "none", outline: "none",
-                color: textPrimary, fontSize: 16, padding: "11px 0", minWidth: 0,
+                position: "absolute", bottom: 32,
+                background: "none", border: "none",
+                color: "rgba(255,255,255,0.25)", fontSize: 12,
+                cursor: "pointer", fontFamily: "inherit",
+                letterSpacing: "0.08em",
+                transition: "color 0.2s",
               }}
-              autoFocus
-            />
-            <button type="submit" disabled={!query.trim()}
-              className={query.trim() ? "gradient-button" : undefined}
-              style={{
-                background: query.trim() ? undefined : inputBorder,
-                border: "none", borderRadius: 13, padding: "12px 26px",
-                color: query.trim() ? "white" : textSub,
-                fontSize: 15, fontWeight: 700,
-                cursor: query.trim() ? "pointer" : "default",
-                transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit",
+              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.25)")}
+            >
+              skip intro →
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── REVEALED PHASE: full landing content ── */}
+      {phase === "revealed" && (
+        <div style={{
+          width: "100%", maxWidth: 620,
+          display: "flex", flexDirection: "column", alignItems: "center",
+          gap: 32, position: "relative", zIndex: 1,
+        }}>
+
+          {/* Top-right actions */}
+          <Reveal delay={0.1}>
+            <div style={{ position: "fixed", top: 20, right: 24, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={onSignIn} className="gradient-button" style={{
+                border: "none", borderRadius: 10, padding: "8px 16px",
+                cursor: "pointer", color: "white", fontSize: 12, fontWeight: 700, fontFamily: "inherit",
               }}>
-              Search
-            </button>
-          </div>
-        </form>
+                Sign In
+              </button>
+              <button onClick={toggle} aria-label="Toggle theme" style={{
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10, padding: "8px 10px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+                color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+              }}>
+                {isDark ? <Sun size={14} /> : <Moon size={14} />}
+                {isDark ? "Light" : "Dark"}
+              </button>
+            </div>
+          </Reveal>
 
-        {/* Examples */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-          {EXAMPLES.map((ex) => (
-            <button key={ex} onClick={() => setQuery(ex)} style={{
-              background: exBg, border: `1px solid ${exBorder}`,
-              borderRadius: 100, padding: "7px 16px",
-              color: exText, fontSize: 13, cursor: "pointer",
-              transition: "all 0.15s", fontFamily: "inherit",
-            }}>
-              {ex}
-            </button>
-          ))}
+          {/* Logo */}
+          <Reveal delay={0} y={16}>
+            <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+              <div style={{
+                position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)",
+                width: 120, height: 120, borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(0,212,170,0.25) 0%, transparent 70%)",
+                filter: "blur(20px)", pointerEvents: "none",
+              }} />
+              <span style={{ fontSize: "clamp(48px, 9vw, 72px)", fontWeight: 900, color: "white", letterSpacing: "-3px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>CI</span>
+              <div style={{ animation: "cited-spin-burst 3.6s cubic-bezier(0.22, 0, 0.1, 1) infinite", display: "flex", alignItems: "center", margin: "0 2px" }}>
+                <CitedMark size={52} />
+              </div>
+              <span style={{ fontSize: "clamp(48px, 9vw, 72px)", fontWeight: 900, color: "white", letterSpacing: "-3px", lineHeight: 1, fontFamily: "system-ui,sans-serif" }}>ED</span>
+            </div>
+          </Reveal>
+
+          {/* Sparkle line — below logo, above headline */}
+          <Reveal delay={0.15} y={0}>
+            <div style={{ width: "min(480px, 90vw)", height: 80, position: "relative" }}>
+              {/* Teal gradient lines */}
+              <div style={{
+                position: "absolute", top: 0, left: "12%", right: "12%", height: 2,
+                background: "linear-gradient(90deg, transparent, rgba(0,212,170,0.8), transparent)",
+                filter: "blur(1px)",
+              }} />
+              <div style={{
+                position: "absolute", top: 0, left: "12%", right: "12%", height: 1,
+                background: "linear-gradient(90deg, transparent, rgba(0,212,170,0.6), transparent)",
+              }} />
+              <div style={{
+                position: "absolute", top: 0, left: "32%", right: "32%", height: 4,
+                background: "linear-gradient(90deg, transparent, rgba(0,229,181,0.9), transparent)",
+                filter: "blur(2px)",
+              }} />
+              <div style={{
+                position: "absolute", top: 0, left: "32%", right: "32%", height: 1,
+                background: "linear-gradient(90deg, transparent, rgba(0,229,181,0.7), transparent)",
+              }} />
+              {/* Sparkles in this zone */}
+              <SparklesCore
+                background="transparent"
+                minSize={0.4}
+                maxSize={1}
+                particleDensity={800}
+                particleColor="#00D4AA"
+                speed={2}
+                className="w-full h-full"
+              />
+              {/* Fade bottom */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "radial-gradient(ellipse 80% 60% at 50% 0%, transparent 20%, #000 100%)",
+              }} />
+            </div>
+          </Reveal>
+
+          {/* Headline */}
+          <Reveal delay={0.3}>
+            <div style={{ textAlign: "center" }}>
+              <h1 style={{
+                fontSize: "clamp(28px, 5.5vw, 46px)", fontWeight: 900, color: "white",
+                margin: "0 0 14px 0", letterSpacing: "-1.5px", lineHeight: 1.1,
+              }}>
+                Ask any health question.
+              </h1>
+              <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", margin: 0, lineHeight: 1.7, maxWidth: 400 }}>
+                CITED searches peer-reviewed research and gives you evidence-based answers personalized to your biology.
+              </p>
+            </div>
+          </Reveal>
+
+          {/* Search */}
+          <Reveal delay={0.45} y={16}>
+            <form onSubmit={handleSubmit} style={{ width: "min(560px, 90vw)" }}>
+              <div style={{
+                display: "flex", gap: 8,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 18, padding: "6px 6px 6px 22px",
+              }}>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="e.g. Does magnesium improve sleep quality?"
+                  style={{
+                    flex: 1, background: "transparent", border: "none", outline: "none",
+                    color: "white", fontSize: 16, padding: "11px 0", minWidth: 0,
+                  }}
+                  autoFocus
+                />
+                <button type="submit" disabled={!query.trim()}
+                  className={query.trim() ? "gradient-button" : undefined}
+                  style={{
+                    background: query.trim() ? undefined : "rgba(255,255,255,0.08)",
+                    border: "none", borderRadius: 13, padding: "12px 26px",
+                    color: query.trim() ? "white" : "rgba(255,255,255,0.3)",
+                    fontSize: 15, fontWeight: 700,
+                    cursor: query.trim() ? "pointer" : "default",
+                    transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit",
+                  }}>
+                  Search
+                </button>
+              </div>
+            </form>
+          </Reveal>
+
+          {/* Examples */}
+          <Reveal delay={0.55}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 560 }}>
+              {EXAMPLES.map((ex) => (
+                <button key={ex} onClick={() => setQuery(ex)} style={{
+                  background: "rgba(0,212,170,0.07)", border: "1px solid rgba(0,212,170,0.18)",
+                  borderRadius: 100, padding: "7px 16px",
+                  color: "rgba(255,255,255,0.55)", fontSize: 13, cursor: "pointer",
+                  transition: "all 0.15s", fontFamily: "inherit",
+                }}>
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </Reveal>
+
+          {/* Trust line */}
+          <Reveal delay={0.6}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", margin: 0, letterSpacing: "0.04em", textAlign: "center" }}>
+              Free to try · No account required · Backed by PubMed
+            </p>
+          </Reveal>
+
+          {/* CTAs */}
+          <Reveal delay={0.7}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+              <button onClick={() => setView("plans")} className="gradient-button" style={{
+                border: "none", borderRadius: 12, padding: "11px 24px",
+                color: "white", fontSize: 14, fontWeight: 600,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>
+                View Plans
+              </button>
+              <button onClick={() => setView("how-it-works")} style={{
+                background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 12, padding: "11px 24px",
+                color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 500,
+                cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
+              }}>
+                How does it work?
+              </button>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.75}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)", margin: "-8px 0 0 0" }}>
+              cited.health
+            </p>
+          </Reveal>
         </div>
-
-        <p style={{ fontSize: 12, color: textMuted, margin: 0, letterSpacing: "0.03em", textAlign: "center" }}>
-          Free to try · No account required · Backed by PubMed
-        </p>
-
-        {/* Secondary CTAs */}
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginTop: -8 }}>
-          <button onClick={() => setView("plans")} className="gradient-button" style={{
-            border: "none",
-            borderRadius: 12, padding: "11px 24px",
-            color: "white", fontSize: 14, fontWeight: 600,
-            cursor: "pointer", fontFamily: "inherit",
-          }}>
-            View Plans
-          </button>
-          <button onClick={() => setView("how-it-works")} style={{
-            background: "transparent", border: `1px solid ${howBorder}`,
-            borderRadius: 12, padding: "11px 24px",
-            color: howText, fontSize: 14, fontWeight: 500,
-            cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
-          }}>
-            How does it work?
-          </button>
-        </div>
-
-        <p style={{ fontSize: 12, color: textMuted, margin: "-16px 0 0 0" }}>
-          cited.health
-        </p>
-      </div>
+      )}
     </div>
   );
 }
