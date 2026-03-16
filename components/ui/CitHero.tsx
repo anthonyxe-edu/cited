@@ -2,17 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/lib/theme";
+import { SparklesCore } from "@/components/ui/sparkles";
 
 const AUDIO_SRC      = "/audio/cit-intro.mp3";
 const AUTOPLAY_DELAY = 2200;
 const POINTS         = 256;
 
 // Tight gaussian — peaks only in center ~30% of width
-function envelope(pos: number) {
+function gauss(pos: number) {
   return Math.exp(-Math.pow((pos - 0.5) * 8, 2));
 }
 
-function drawLine(
+// Draw ONLY the waveform peaks over the CSS line (transparent when idle)
+function drawPeaks(
   canvas: HTMLCanvasElement,
   data: Uint8Array | null,
   active: boolean,
@@ -31,27 +33,28 @@ function drawLine(
   }
   ctx.clearRect(0, 0, W, H);
 
-  const cy = H / 2;
+  if (!active || !data) return; // CSS line handles idle state
 
-  // Build Y values: flat when idle, gaussian-peaked center when active
+  const cy = H / 2;
+  const teal  = isDark ? "0,212,170"   : "0,107,87";
+  const white = isDark ? "200,255,240" : "0,160,130";
+
+  // Build wave Y values with gaussian center envelope
   const ys: number[] = Array.from({ length: POINTS }, (_, i) => {
-    if (!data || !active) return cy;
     const pos = i / (POINTS - 1);
     const idx = Math.floor(pos * data.length);
     const raw = (data[idx] - 128) / 128;
-    return cy + raw * envelope(pos) * cy * 0.9;
+    return cy + raw * gauss(pos) * cy * 0.88;
   });
 
-  // Gradient: fade transparent → teal → white-teal center → teal → transparent
-  const teal  = isDark ? "0,212,170"   : "0,107,87";
-  const white = isDark ? "210,255,240" : "0,160,130";
-  const grad  = ctx.createLinearGradient(0, 0, W, 0);
+  // Match the CSS gradient line style exactly
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
   grad.addColorStop(0,    `rgba(${teal},0)`);
-  grad.addColorStop(0.06, `rgba(${teal},0.6)`);
-  grad.addColorStop(0.3,  `rgba(${teal},0.9)`);
+  grad.addColorStop(0.06, `rgba(${teal},0.7)`);
+  grad.addColorStop(0.28, `rgba(${teal},0.9)`);
   grad.addColorStop(0.5,  `rgba(${white},1)`);
-  grad.addColorStop(0.7,  `rgba(${teal},0.9)`);
-  grad.addColorStop(0.94, `rgba(${teal},0.6)`);
+  grad.addColorStop(0.72, `rgba(${teal},0.9)`);
+  grad.addColorStop(0.94, `rgba(${teal},0.7)`);
   grad.addColorStop(1,    `rgba(${teal},0)`);
 
   ctx.lineJoin = "round";
@@ -69,31 +72,30 @@ function drawLine(
     ctx!.lineTo(W, ys[POINTS - 1]);
   }
 
-  // Pass 1 — thin tight halo (not wide/boxy)
+  // Blurred outer pass — matches the `blur-sm` CSS line
   buildPath();
-  ctx.strokeStyle = `rgba(${teal},0.18)`;
-  ctx.lineWidth   = 4;
-  ctx.shadowColor = `rgba(${teal},0.4)`;
-  ctx.shadowBlur  = 5;
+  ctx.strokeStyle = `rgba(${teal},0.7)`;
+  ctx.lineWidth   = 3;
+  ctx.filter      = "blur(1px)";
   ctx.stroke();
+  ctx.filter      = "none";
 
-  // Pass 2 — sharp 1.5px core with gradient
+  // Sharp 1px core — matches the `h-px` CSS line
   buildPath();
   ctx.strokeStyle = grad;
-  ctx.lineWidth   = 1.5;
-  ctx.shadowColor = `rgba(${white},0.85)`;
-  ctx.shadowBlur  = 3;
+  ctx.lineWidth   = 1;
+  ctx.shadowColor = `rgba(${white},0.8)`;
+  ctx.shadowBlur  = 2;
   ctx.stroke();
   ctx.shadowBlur  = 0;
 
-  // Small precise center bloom
-  const peakAmt = active && data ? Math.abs((data[data.length >> 1] - 128) / 128) : 0;
-  const bloom   = ctx.createRadialGradient(W / 2, cy, 0, W / 2, cy, H * (1.2 + peakAmt));
-  bloom.addColorStop(0,   `rgba(${white},${0.1 + peakAmt * 0.08})`);
-  bloom.addColorStop(0.5, `rgba(${teal},0.04)`);
-  bloom.addColorStop(1,   `rgba(${teal},0)`);
-  ctx.fillStyle = bloom;
-  ctx.fillRect(0, 0, W, H);
+  // Center hot pass — matches the `h-[5px] blur-sm` CSS center line
+  buildPath();
+  ctx.strokeStyle = `rgba(${white},0.6)`;
+  ctx.lineWidth   = 2;
+  ctx.filter      = "blur(1.5px)";
+  ctx.stroke();
+  ctx.filter      = "none";
 }
 
 interface CitHeroProps {
@@ -117,7 +119,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
     const data     = analyser ? new Uint8Array(analyser.fftSize) : null;
     function frame() {
       if (analyser && data) analyser.getByteTimeDomainData(data);
-      if (canvasRef.current) drawLine(canvasRef.current, data, true, isDarkRef.current);
+      if (canvasRef.current) drawPeaks(canvasRef.current, data, true, isDarkRef.current);
       animRef.current = requestAnimationFrame(frame);
     }
     animRef.current = requestAnimationFrame(frame);
@@ -125,7 +127,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function stopViz() {
     if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
-    if (canvasRef.current) drawLine(canvasRef.current, null, false, isDarkRef.current);
+    if (canvasRef.current) drawPeaks(canvasRef.current, null, false, isDarkRef.current);
   }
 
   async function play() {
@@ -136,7 +138,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
         const ctx      = new AudioContext();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.85;
+        analyser.smoothingTimeConstant = 0.82;
         ctx.createMediaElementSource(audio).connect(analyser);
         analyser.connect(ctx.destination);
         audioCtxRef.current = ctx;
@@ -162,27 +164,83 @@ export function CitHero({ onEnded }: CitHeroProps) {
     audio.preload    = "auto";
     audioRef.current = audio;
     audio.onended    = () => { stopViz(); setStatus("ended"); onEnded?.(); };
-
     const t = setTimeout(() => play(), AUTOPLAY_DELAY);
     return () => { clearTimeout(t); audio.pause(); stopViz(); audioCtxRef.current?.close(); };
   }, []);
-
-  useEffect(() => {
-    if (status !== "playing" && canvasRef.current) {
-      drawLine(canvasRef.current, null, false, isDark);
-    }
-  }, [isDark]);
 
   function toggle() {
     if (status === "playing") pause();
     else play();
   }
 
+  const tealColor  = isDark ? "#00D4AA" : "#006B57";
+  const teal80     = isDark ? "rgba(0,212,170,0.8)" : "rgba(0,107,87,0.7)";
+  const teal60     = isDark ? "rgba(0,212,170,0.6)" : "rgba(0,107,87,0.5)";
+  const white90    = isDark ? "rgba(0,229,181,0.9)" : "rgba(0,155,120,0.8)";
+
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       onClick={toggle}
-      style={{ width: "100%", height: 90, display: "block", cursor: "pointer" }}
-    />
+      style={{ position: "relative", width: "100%", height: 100, cursor: "pointer" }}
+    >
+      {/* CSS gradient lines — exact SparklesPreview pattern, centered */}
+
+      {/* Outer blurred line */}
+      <div style={{
+        position: "absolute", top: "50%", left: "8%", right: "8%",
+        height: 2, transform: "translateY(-50%)",
+        background: `linear-gradient(90deg, transparent, ${teal80}, transparent)`,
+        filter: "blur(1px)",
+      }} />
+      {/* Outer sharp line */}
+      <div style={{
+        position: "absolute", top: "50%", left: "8%", right: "8%",
+        height: 1, transform: "translateY(-50%)",
+        background: `linear-gradient(90deg, transparent, ${teal60}, transparent)`,
+      }} />
+      {/* Center blurred hotspot */}
+      <div style={{
+        position: "absolute", top: "50%", left: "30%", right: "30%",
+        height: 5, transform: "translateY(-50%)",
+        background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
+        filter: "blur(2px)",
+      }} />
+      {/* Center sharp hotspot */}
+      <div style={{
+        position: "absolute", top: "50%", left: "30%", right: "30%",
+        height: 1, transform: "translateY(-50%)",
+        background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
+      }} />
+
+      {/* SparklesCore — particles scattered around the line */}
+      <SparklesCore
+        background="transparent"
+        minSize={0.3}
+        maxSize={0.9}
+        particleDensity={500}
+        particleColor={tealColor}
+        speed={1.2}
+        className="absolute inset-0 w-full h-full"
+      />
+
+      {/* Radial mask — fades particles away from line (matches demo pattern) */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: isDark
+          ? "radial-gradient(500px 60px at center, transparent 30%, #000 100%)"
+          : "radial-gradient(500px 60px at center, transparent 30%, #fff 100%)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Canvas — draws waveform peaks on top when Cit speaks */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
   );
 }
