@@ -559,7 +559,7 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
   }
 
   // ── Theme-aware color tokens for landing ──────────────────────────────────
-  const landingBg       = isDark ? "#000000"                    : "#FFFFFF";
+  const landingBg       = isDark ? "#0A1628"                    : "#FFFFFF";
   const logoText        = isDark ? "white"                      : "#0A1628";
   const headlineColor   = isDark ? "white"                      : "#0A1628";
   const subColor        = isDark ? "rgba(255,255,255,0.45)"     : "rgba(10,22,40,0.55)";
@@ -580,7 +580,7 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
   const sparkleColor    = isDark ? "#00D4AA"                    : "#006B57";
   const glowLine1       = isDark ? "rgba(0,212,170,0.8)"        : "rgba(0,107,87,0.5)";
   const glowLine2       = isDark ? "rgba(0,229,181,0.9)"        : "rgba(0,155,128,0.6)";
-  const fadeBg          = isDark ? "#000"                       : "#fff";
+  const fadeBg          = isDark ? "#0A1628"                    : "#fff";
   const skipColor       = isDark ? "rgba(255,255,255,0.25)"     : "rgba(10,22,40,0.25)";
   const skipHover       = isDark ? "rgba(255,255,255,0.55)"     : "rgba(10,22,40,0.55)";
   const ambientGlow     = isDark ? "rgba(0,212,170,0.08)"       : "rgba(0,107,87,0.06)";
@@ -685,26 +685,29 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
           gap: 32, position: "relative", zIndex: 1,
         }}>
 
-          {/* Top-right actions */}
-          <Reveal delay={0.1}>
-            <div style={{ position: "fixed", top: 20, right: 24, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
-              <button onClick={onSignIn} className="gradient-button" style={{
-                border: "none", borderRadius: 10, padding: "8px 16px",
-                cursor: "pointer", color: "white", fontSize: 12, fontWeight: 700, fontFamily: "inherit",
-              }}>
-                Sign In
-              </button>
-              <button onClick={toggle} aria-label="Toggle theme" style={{
-                background: topBarBg, border: `1px solid ${topBarBorder}`,
-                borderRadius: 10, padding: "8px 10px", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 6,
-                color: topBarText, fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-              }}>
-                {isDark ? <Sun size={14} /> : <Moon size={14} />}
-                {isDark ? "Light" : "Dark"}
-              </button>
-            </div>
-          </Reveal>
+          {/* Top-right actions — fade in only (no y-shift, they're fixed-position) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{ position: "fixed", top: 20, right: 24, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}
+          >
+            <button onClick={onSignIn} className="gradient-button" style={{
+              border: "none", borderRadius: 10, padding: "8px 16px",
+              cursor: "pointer", color: "white", fontSize: 12, fontWeight: 700, fontFamily: "inherit",
+            }}>
+              Sign In
+            </button>
+            <button onClick={toggle} aria-label="Toggle theme" style={{
+              background: topBarBg, border: `1px solid ${topBarBorder}`,
+              borderRadius: 10, padding: "8px 10px", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+              color: topBarText, fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+            }}>
+              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+              {isDark ? "Light" : "Dark"}
+            </button>
+          </motion.div>
 
           {/* Logo */}
           <Reveal delay={0} y={16}>

@@ -9,9 +9,9 @@ const POINTS         = 128;
 const CHIME_DELAY    = 400;
 const FORM_MS        = 1200;
 
-// Where the waveform zone lives (fraction of width)
-const WAVE_START = 0.18;
-const WAVE_END   = 0.82;
+// Where the waveform zone lives (fraction of width) — tight center only
+const WAVE_START = 0.32;
+const WAVE_END   = 0.68;
 
 /* ── sparkle chime via Web Audio API ────────────────────────────────────────── */
 function playChime(ref: React.MutableRefObject<AudioContext | null>) {
@@ -83,8 +83,8 @@ function drawWave(
   if (!active || amp < 0.005) return;
 
   const cy    = H / 2;
-  const teal  = isDark ? "0,212,170"   : "0,107,87";
-  const white = isDark ? "200,255,240" : "0,160,130";
+  const teal  = isDark ? "0,180,145"   : "0,107,87";
+  const white = isDark ? "0,212,170"   : "0,140,112";
 
   /* Build Y-values: flat at edges, smooth sine-wave in center zone */
   const ys: number[] = Array.from({ length: POINTS }, (_, i) => {
@@ -93,11 +93,11 @@ function drawWave(
     // Edge opacity fade (matches the CSS gradient transparent → color → transparent)
     const edgeFade = Math.min(pos / 0.06, 1) * Math.min((1 - pos) / 0.06, 1);
 
-    // Waveform zone: smooth sin(π) envelope so displacement fades to zero at zone edges
+    // Waveform zone: steep power-curve envelope — peaks sharply in center, subsides fast
     let waveFade = 0;
     if (pos > WAVE_START && pos < WAVE_END) {
       const zonePos = (pos - WAVE_START) / (WAVE_END - WAVE_START);
-      waveFade = Math.sin(zonePos * Math.PI);
+      waveFade = Math.pow(Math.sin(zonePos * Math.PI), 2.5);
     }
 
     // Layered sine waves — organic, non-repeating feel
@@ -153,7 +153,7 @@ function drawWave(
 
   /* Pass 3 — center hot glow (≈ CSS center hotspot) */
   buildPath();
-  ctx.strokeStyle = `rgba(${white},0.7)`;
+  ctx.strokeStyle = `rgba(${white},0.5)`;
   ctx.lineWidth   = 2;
   ctx.filter      = "blur(1.5px)";
   ctx.stroke();
