@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/lib/theme";
-import { SparklesCore } from "@/components/ui/sparkles";
 
 const AUDIO_SRC      = "/audio/cit-intro.mp3";
 const AUTOPLAY_DELAY = 2200;
@@ -173,7 +172,6 @@ export function CitHero({ onEnded }: CitHeroProps) {
     else play();
   }
 
-  const tealColor  = isDark ? "#00D4AA" : "#006B57";
   const teal80     = isDark ? "rgba(0,212,170,0.8)" : "rgba(0,107,87,0.7)";
   const teal60     = isDark ? "rgba(0,212,170,0.6)" : "rgba(0,107,87,0.5)";
   const white90    = isDark ? "rgba(0,229,181,0.9)" : "rgba(0,155,120,0.8)";
@@ -210,26 +208,6 @@ export function CitHero({ onEnded }: CitHeroProps) {
         position: "absolute", top: "50%", left: "30%", right: "30%",
         height: 1, transform: "translateY(-50%)",
         background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
-      }} />
-
-      {/* SparklesCore — particles scattered around the line */}
-      <SparklesCore
-        background="transparent"
-        minSize={0.3}
-        maxSize={0.9}
-        particleDensity={500}
-        particleColor={tealColor}
-        speed={1.2}
-        className="absolute inset-0 w-full h-full"
-      />
-
-      {/* Radial mask — fades particles away from line (matches demo pattern) */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: isDark
-          ? "radial-gradient(500px 60px at center, transparent 30%, #000 100%)"
-          : "radial-gradient(500px 60px at center, transparent 30%, #fff 100%)",
-        pointerEvents: "none",
       }} />
 
       {/* Canvas — draws waveform peaks on top when Cit speaks */}

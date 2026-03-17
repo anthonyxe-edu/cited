@@ -599,6 +599,19 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
         transition: "background 0.6s ease",
       }}
     >
+      {/* ── Full-screen background particles (always present) ── */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <SparklesCore
+          background="transparent"
+          minSize={0.3}
+          maxSize={0.9}
+          particleDensity={60}
+          particleColor={sparkleColor}
+          speed={0.5}
+          className="w-full h-full"
+        />
+      </div>
+
       {/* ── INTRO PHASE ── */}
       <AnimatePresence>
         {phase === "intro" && (
