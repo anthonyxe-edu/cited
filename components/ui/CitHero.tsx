@@ -5,19 +5,15 @@ import { useTheme } from "@/lib/theme";
 
 const AUDIO_SRC      = "/audio/cit-intro.mp3";
 const AUTOPLAY_DELAY = 2200;
-const POINTS         = 256;
+const POINTS         = 128;
 
-// Tight gaussian — peaks only in center ~30% of width
-function gauss(pos: number) {
-  return Math.exp(-Math.pow((pos - 0.5) * 8, 2));
-}
-
-// Draw ONLY the waveform peaks over the CSS line (transparent when idle)
-function drawPeaks(
+// Smooth parametric wave driven by amplitude + time — no jagged FFT samples
+function drawWave(
   canvas: HTMLCanvasElement,
-  data: Uint8Array | null,
   active: boolean,
   isDark: boolean,
+  t: number,       // animation time (ever-incrementing)
+  amp: number,     // smoothed amplitude [0..1]
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -32,21 +28,24 @@ function drawPeaks(
   }
   ctx.clearRect(0, 0, W, H);
 
-  if (!active || !data) return; // CSS line handles idle state
+  if (!active || amp < 0.002) return;
 
-  const cy = H / 2;
+  const cy    = H / 2;
   const teal  = isDark ? "0,212,170"   : "0,107,87";
   const white = isDark ? "200,255,240" : "0,160,130";
 
-  // Build wave Y values with gaussian center envelope
+  // Build smooth wave — layered sines give organic, non-mechanical motion
   const ys: number[] = Array.from({ length: POINTS }, (_, i) => {
-    const pos = i / (POINTS - 1);
-    const idx = Math.floor(pos * data.length);
-    const raw = (data[idx] - 128) / 128;
-    return cy + raw * gauss(pos) * cy * 0.88;
+    const pos      = i / (POINTS - 1);
+    const edgeFade = Math.sin(pos * Math.PI); // smooth fade to 0 at both edges
+    const wave =
+      Math.sin(pos * Math.PI * 3   + t * 2.1) * 0.50 +
+      Math.sin(pos * Math.PI * 5   + t * 1.3) * 0.28 +
+      Math.sin(pos * Math.PI * 1.5 + t * 2.8) * 0.22;
+    return cy + wave * edgeFade * cy * 0.78 * amp;
   });
 
-  // Match the CSS gradient line style exactly
+  // Exact same gradient as the CSS lines
   const grad = ctx.createLinearGradient(0, 0, W, 0);
   grad.addColorStop(0,    `rgba(${teal},0)`);
   grad.addColorStop(0.06, `rgba(${teal},0.7)`);
@@ -71,7 +70,7 @@ function drawPeaks(
     ctx!.lineTo(W, ys[POINTS - 1]);
   }
 
-  // Blurred outer pass — matches the `blur-sm` CSS line
+  // Blurred outer pass — matches the blur-sm CSS line
   buildPath();
   ctx.strokeStyle = `rgba(${teal},0.7)`;
   ctx.lineWidth   = 3;
@@ -79,18 +78,18 @@ function drawPeaks(
   ctx.stroke();
   ctx.filter      = "none";
 
-  // Sharp 1px core — matches the `h-px` CSS line
+  // Sharp 1px core with gradient — matches the h-px CSS line
   buildPath();
   ctx.strokeStyle = grad;
-  ctx.lineWidth   = 1;
+  ctx.lineWidth   = 1.5;
   ctx.shadowColor = `rgba(${white},0.8)`;
-  ctx.shadowBlur  = 2;
+  ctx.shadowBlur  = 3;
   ctx.stroke();
   ctx.shadowBlur  = 0;
 
-  // Center hot pass — matches the `h-[5px] blur-sm` CSS center line
+  // Center hot pass — matches the h-[5px] blur-sm CSS center line
   buildPath();
-  ctx.strokeStyle = `rgba(${white},0.6)`;
+  ctx.strokeStyle = `rgba(${white},0.7)`;
   ctx.lineWidth   = 2;
   ctx.filter      = "blur(1.5px)";
   ctx.stroke();
@@ -113,12 +112,30 @@ export function CitHero({ onEnded }: CitHeroProps) {
   const isDarkRef   = useRef(isDark);
   isDarkRef.current = isDark;
 
+  // Smooth animation state
+  const timeRef = useRef(0);
+  const ampRef  = useRef(0);
+
   function startViz() {
     const analyser = analyserRef.current;
     const data     = analyser ? new Uint8Array(analyser.fftSize) : null;
     function frame() {
       if (analyser && data) analyser.getByteTimeDomainData(data);
-      if (canvasRef.current) drawPeaks(canvasRef.current, data, true, isDarkRef.current);
+
+      // Advance time
+      timeRef.current += 0.018;
+
+      // Compute RMS amplitude from audio data, smooth it
+      if (data) {
+        const rms = Math.sqrt(
+          data.reduce((s, v) => s + Math.pow((v - 128) / 128, 2), 0) / data.length
+        );
+        ampRef.current = ampRef.current * 0.88 + rms * 0.12;
+      }
+
+      if (canvasRef.current) {
+        drawWave(canvasRef.current, true, isDarkRef.current, timeRef.current, Math.min(ampRef.current * 7, 1));
+      }
       animRef.current = requestAnimationFrame(frame);
     }
     animRef.current = requestAnimationFrame(frame);
@@ -126,7 +143,9 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function stopViz() {
     if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
-    if (canvasRef.current) drawPeaks(canvasRef.current, null, false, isDarkRef.current);
+    // Smoothly wind down amplitude to 0
+    ampRef.current = 0;
+    if (canvasRef.current) drawWave(canvasRef.current, false, isDarkRef.current, timeRef.current, 0);
   }
 
   async function play() {
@@ -137,7 +156,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
         const ctx      = new AudioContext();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.82;
+        analyser.smoothingTimeConstant = 0.88;
         ctx.createMediaElementSource(audio).connect(analyser);
         analyser.connect(ctx.destination);
         audioCtxRef.current = ctx;
@@ -172,6 +191,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
     else play();
   }
 
+  const isPlaying  = status === "playing";
   const teal80     = isDark ? "rgba(0,212,170,0.8)" : "rgba(0,107,87,0.7)";
   const teal60     = isDark ? "rgba(0,212,170,0.6)" : "rgba(0,107,87,0.5)";
   const white90    = isDark ? "rgba(0,229,181,0.9)" : "rgba(0,155,120,0.8)";
@@ -181,7 +201,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
       onClick={toggle}
       style={{ position: "relative", width: "100%", height: 100, cursor: "pointer" }}
     >
-      {/* CSS gradient lines — exact SparklesPreview pattern, centered */}
+      {/* CSS gradient lines — fade out when canvas takes over */}
 
       {/* Outer blurred line */}
       <div style={{
@@ -189,12 +209,16 @@ export function CitHero({ onEnded }: CitHeroProps) {
         height: 2, transform: "translateY(-50%)",
         background: `linear-gradient(90deg, transparent, ${teal80}, transparent)`,
         filter: "blur(1px)",
+        opacity: isPlaying ? 0 : 1,
+        transition: "opacity 0.5s ease",
       }} />
       {/* Outer sharp line */}
       <div style={{
         position: "absolute", top: "50%", left: "8%", right: "8%",
         height: 1, transform: "translateY(-50%)",
         background: `linear-gradient(90deg, transparent, ${teal60}, transparent)`,
+        opacity: isPlaying ? 0 : 1,
+        transition: "opacity 0.5s ease",
       }} />
       {/* Center blurred hotspot */}
       <div style={{
@@ -202,21 +226,27 @@ export function CitHero({ onEnded }: CitHeroProps) {
         height: 5, transform: "translateY(-50%)",
         background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
         filter: "blur(2px)",
+        opacity: isPlaying ? 0 : 1,
+        transition: "opacity 0.5s ease",
       }} />
       {/* Center sharp hotspot */}
       <div style={{
         position: "absolute", top: "50%", left: "30%", right: "30%",
         height: 1, transform: "translateY(-50%)",
         background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
+        opacity: isPlaying ? 0 : 1,
+        transition: "opacity 0.5s ease",
       }} />
 
-      {/* Canvas — draws waveform peaks on top when Cit speaks */}
+      {/* Canvas — takes over from CSS lines when Cit speaks */}
       <canvas
         ref={canvasRef}
         style={{
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
           pointerEvents: "none",
+          opacity: isPlaying ? 1 : 0,
+          transition: "opacity 0.5s ease",
         }}
       />
     </div>
