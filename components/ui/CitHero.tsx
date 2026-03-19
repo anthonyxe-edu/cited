@@ -60,121 +60,159 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
   } catch { /* best-effort */ }
 }
 
-/* ── Cit SVG character ─────────────────────────────────────────────────────── */
+/* ── Cit 3D-style clay mascot ──────────────────────────────────────────────── */
 function CitCharacter({
   mouthOpen,
-  isDark,
-  size = 220,
+  size = 260,
 }: {
   mouthOpen: number; // 0–1
-  isDark: boolean;
   size?: number;
 }) {
-  const bodyColor = isDark ? "rgba(255,255,255,0.85)" : "rgba(10,22,40,0.75)";
-  const jointColor = isDark ? "rgba(255,255,255,0.5)" : "rgba(10,22,40,0.4)";
-  const mouthColor = isDark ? "rgba(255,255,255,0.9)" : "rgba(10,22,40,0.8)";
-  const glowColor  = isDark ? "rgba(0,212,170,0.25)" : "rgba(0,180,140,0.2)";
+  // Moss green palette
+  const BASE     = "#4B7D50";
+  const LIGHT    = "#5A9460";
+  const SHADOW   = "#3D6842";
+  const DEEP     = "#2F5233";
+  const DISC     = "#A0A0A0";
+  const DISC_LT  = "#B8B8B8";
 
-  // Mouth: curved line that opens into an ellipse when speaking
-  const mouthY = 68;
-  const mouthWidth = 6;
-  const mouthHeight = mouthOpen * 4; // 0 when closed, 4 when fully open
+  // Mouth: small dark opening, grows when speaking
+  const mouthRx = 3.5 + mouthOpen * 1.5;
+  const mouthRy = 1.5 + mouthOpen * 3;
 
   return (
     <svg
       width={size}
-      height={size}
-      viewBox="0 0 100 140"
+      height={size * 1.15}
+      viewBox="0 0 200 230"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{ overflow: "visible" }}
     >
       <defs>
-        <linearGradient id="citCrossGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00E5B5" />
-          <stop offset="100%" stopColor="#00B894" />
+        {/* Body gradient — subtle 3D shading */}
+        <linearGradient id="citBodyGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={LIGHT} />
+          <stop offset="45%" stopColor={BASE} />
+          <stop offset="100%" stopColor={SHADOW} />
         </linearGradient>
-        <filter id="citGlow">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+        {/* Cross head gradient */}
+        <linearGradient id="citHeadGrad" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor={LIGHT} />
+          <stop offset="40%" stopColor={BASE} />
+          <stop offset="100%" stopColor={SHADOW} />
+        </linearGradient>
+        {/* Arm gradient */}
+        <linearGradient id="citArmGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={LIGHT} />
+          <stop offset="100%" stopColor={SHADOW} />
+        </linearGradient>
+        {/* Disc gradient */}
+        <radialGradient id="citDiscGrad" cx="0.5" cy="0.4" r="0.6">
+          <stop offset="0%" stopColor={DISC_LT} />
+          <stop offset="100%" stopColor={DISC} />
+        </radialGradient>
+        {/* Soft shadow */}
+        <filter id="citShadow">
+          <feGaussianBlur stdDeviation="3" />
         </filter>
-        <filter id="citSoftGlow">
-          <feGaussianBlur stdDeviation="8" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+        <filter id="citBaseShadow">
+          <feGaussianBlur stdDeviation="5" />
         </filter>
       </defs>
 
-      {/* ── Ambient glow behind head ── */}
-      <circle cx="50" cy="50" r="30" fill={glowColor} filter="url(#citSoftGlow)" />
-
-      {/* ── Cross head (oversized — the CITED + mark) ── */}
-      <g filter="url(#citGlow)">
-        {/* Vertical bar */}
-        <rect x="41" y="24" width="18" height="52" rx="6" fill="url(#citCrossGrad)" />
-        {/* Horizontal bar */}
-        <rect x="24" y="41" width="52" height="18" rx="6" fill="url(#citCrossGrad)" />
-      </g>
-
-      {/* ── Mouth (on the cross, lower center) ── */}
-      {mouthHeight < 0.5 ? (
-        // Closed: small curved smile line
-        <path
-          d={`M ${50 - mouthWidth} ${mouthY} Q 50 ${mouthY + 2} ${50 + mouthWidth} ${mouthY}`}
-          stroke={mouthColor}
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          fill="none"
-        />
-      ) : (
-        // Open: ellipse mouth
-        <ellipse
-          cx="50"
-          cy={mouthY}
-          rx={mouthWidth * 0.8}
-          ry={mouthHeight}
-          fill={isDark ? "rgba(10,22,40,0.7)" : "rgba(255,255,255,0.8)"}
-          stroke={mouthColor}
-          strokeWidth="1"
-        />
-      )}
-
-      {/* ── Neck ── */}
-      <line x1="50" y1="76" x2="50" y2="84" stroke={bodyColor} strokeWidth="2.5" strokeLinecap="round" />
-
-      {/* ── Torso ── */}
-      <line x1="50" y1="84" x2="50" y2="110" stroke={bodyColor} strokeWidth="2.5" strokeLinecap="round" />
-
-      {/* ── Arms ── */}
-      {/* Left arm */}
-      <line x1="50" y1="89" x2="36" y2="96" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
-      <line x1="36" y1="96" x2="30" y2="105" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
-      <circle cx="36" cy="96" r="1.5" fill={jointColor} />
-
-      {/* Right arm */}
-      <line x1="50" y1="89" x2="64" y2="96" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
-      <line x1="64" y1="96" x2="70" y2="105" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
-      <circle cx="64" cy="96" r="1.5" fill={jointColor} />
+      {/* ── Grey disc base ── */}
+      <ellipse cx="100" cy="215" rx="42" ry="10" fill="rgba(0,0,0,0.08)" filter="url(#citBaseShadow)" />
+      <ellipse cx="100" cy="212" rx="38" ry="9" fill="url(#citDiscGrad)" />
+      {/* Disc highlight */}
+      <ellipse cx="100" cy="210" rx="28" ry="5" fill="rgba(255,255,255,0.12)" />
 
       {/* ── Legs ── */}
       {/* Left leg */}
-      <line x1="50" y1="110" x2="40" y2="126" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
-      <line x1="40" y1="126" x2="37" y2="138" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
-      <circle cx="40" cy="126" r="1.5" fill={jointColor} />
-
+      <rect x="82" y="175" width="14" height="34" rx="7" fill="url(#citBodyGrad)" />
       {/* Right leg */}
-      <line x1="50" y1="110" x2="60" y2="126" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
-      <line x1="60" y1="126" x2="63" y2="138" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
-      <circle cx="60" cy="126" r="1.5" fill={jointColor} />
+      <rect x="104" y="175" width="14" height="34" rx="7" fill="url(#citBodyGrad)" />
+      {/* Feet — rounded nubs */}
+      <ellipse cx="89" cy="207" rx="9" ry="5.5" fill={BASE} />
+      <ellipse cx="111" cy="207" rx="9" ry="5.5" fill={BASE} />
 
-      {/* ── Joint circles ── */}
-      <circle cx="50" cy="84" r="2" fill={jointColor} /> {/* shoulder */}
-      <circle cx="50" cy="110" r="2" fill={jointColor} /> {/* hip */}
+      {/* ── Body / Torso ── */}
+      {/* Torso shadow */}
+      <ellipse cx="101" cy="170" rx="18" ry="6" fill="rgba(0,0,0,0.06)" filter="url(#citShadow)" />
+      {/* Main torso — slender, rounded */}
+      <rect x="80" y="120" width="40" height="58" rx="16" fill="url(#citBodyGrad)" />
+      {/* Torso highlight (subtle 3D depth) */}
+      <rect x="86" y="125" width="16" height="35" rx="8" fill="rgba(255,255,255,0.06)" />
+
+      {/* ── Left arm (viewer's left = character's right) — WAVING ── */}
+      {/* Upper arm — angled up */}
+      <rect x="52" y="108" width="12" height="30" rx="6"
+        fill="url(#citArmGrad)"
+        transform="rotate(-35 58 123)" />
+      {/* Forearm — angled further up for wave */}
+      <rect x="42" y="82" width="11" height="28" rx="5.5"
+        fill="url(#citArmGrad)"
+        transform="rotate(15 47 96)" />
+      {/* Hand — open, waving */}
+      <ellipse cx="52" cy="78" rx="7" ry="8" fill={BASE}
+        transform="rotate(10 52 78)" />
+      {/* Fingers hint */}
+      <ellipse cx="48" cy="72" rx="2.5" ry="4" fill={LIGHT} transform="rotate(-10 48 72)" />
+      <ellipse cx="53" cy="70" rx="2.5" ry="4.5" fill={LIGHT} transform="rotate(0 53 70)" />
+      <ellipse cx="58" cy="72" rx="2.5" ry="4" fill={LIGHT} transform="rotate(10 58 72)" />
+
+      {/* ── Right arm (viewer's right) — relaxed at side ── */}
+      {/* Upper arm */}
+      <rect x="118" y="128" width="12" height="30" rx="6"
+        fill="url(#citArmGrad)"
+        transform="rotate(8 124 143)" />
+      {/* Forearm */}
+      <rect x="120" y="155" width="11" height="26" rx="5.5"
+        fill="url(#citArmGrad)"
+        transform="rotate(5 125 168)" />
+      {/* Hand — relaxed fist */}
+      <ellipse cx="127" cy="182" rx="6.5" ry="7" fill={BASE} />
+
+      {/* ── Neck ── */}
+      <rect x="92" y="108" width="16" height="16" rx="8" fill={BASE} />
+
+      {/* ── Cross Head ── */}
+      {/* Shadow under head */}
+      <ellipse cx="100" cy="112" rx="22" ry="4" fill="rgba(0,0,0,0.06)" filter="url(#citShadow)" />
+
+      {/* Vertical bar of cross */}
+      <rect x="82" y="28" width="36" height="86" rx="12" fill="url(#citHeadGrad)" />
+      {/* Horizontal bar of cross */}
+      <rect x="56" y="48" width="88" height="36" rx="12" fill="url(#citHeadGrad)" />
+
+      {/* Cross head highlight — top-left light catch */}
+      <rect x="87" y="33" width="14" height="30" rx="7" fill="rgba(255,255,255,0.08)" />
+      <rect x="62" y="53" width="30" height="14" rx="7" fill="rgba(255,255,255,0.06)" />
+
+      {/* Cross head depth — bottom-right shadow */}
+      <rect x="96" y="85" width="18" height="24" rx="9" fill="rgba(0,0,0,0.04)" />
+      <rect x="115" y="60" width="24" height="18" rx="9" fill="rgba(0,0,0,0.04)" />
+
+      {/* ── Mouth — small, dark, centered on lower cross segment ── */}
+      <ellipse
+        cx="100"
+        cy="98"
+        rx={mouthRx}
+        ry={mouthRy}
+        fill="#3A2A20"
+        stroke={DEEP}
+        strokeWidth="0.8"
+      />
+      {/* Mouth interior highlight — subtle lip sheen */}
+      {mouthOpen > 0.3 && (
+        <ellipse
+          cx="100"
+          cy={97 + mouthOpen}
+          rx={mouthRx * 0.5}
+          ry={mouthRy * 0.35}
+          fill="#5A3A2A"
+        />
+      )}
     </svg>
   );
 }
@@ -210,8 +248,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
         const rms = Math.sqrt(
           data.reduce((s, v) => s + Math.pow((v - 128) / 128, 2), 0) / data.length,
         );
-        // Map RMS to mouth openness (0–1), with smoothing
-        setMouthOpen((prev) => prev * 0.5 + Math.min(rms * 16, 1) * 0.5);
+        setMouthOpen((prev) => prev * 0.45 + Math.min(rms * 18, 1) * 0.55);
       }
       animRef.current = requestAnimationFrame(frame);
     }
@@ -261,7 +298,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
   /* ---- register listeners for first user interaction ---- */
   function waitForInteraction() {
     setStatus("blocked");
-    setVisible(true); // Show Cit immediately, waiting for tap
+    setVisible(true);
 
     function onInteraction() {
       cleanup();
@@ -294,13 +331,11 @@ export function CitHero({ onEnded }: CitHeroProps) {
     const allowed = canAutoplay();
 
     if (allowed) {
-      // Chime + fade in Cit
       const chimeT = setTimeout(() => {
         playChime(chimeCtxRef);
         setVisible(true);
       }, CHIME_DELAY);
 
-      // Start speech
       const playT = setTimeout(() => play(), AUTOPLAY_DELAY);
 
       return () => {
@@ -337,7 +372,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
       style={{
         position: "relative",
         width: "100%",
-        height: 300,
+        height: 340,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -348,15 +383,14 @@ export function CitHero({ onEnded }: CitHeroProps) {
       <div
         style={{
           opacity: visible ? 1 : 0,
-          transform: visible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
-          transition: "opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
-          animation: visible && status !== "blocked" ? "citFloat 3s ease-in-out infinite" : "none",
+          transform: visible ? "translateY(0) scale(1)" : "translateY(30px) scale(0.85)",
+          transition: "opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          animation: visible && status !== "blocked" ? "citFloat 3.5s ease-in-out infinite" : "none",
         }}
       >
         <CitCharacter
           mouthOpen={mouthOpen}
-          isDark={isDark}
-          size={220}
+          size={260}
         />
       </div>
 
@@ -365,7 +399,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
         <div
           style={{
             position: "absolute",
-            bottom: 10,
+            bottom: 4,
             left: "50%",
             transform: "translateX(-50%)",
             fontSize: 11,

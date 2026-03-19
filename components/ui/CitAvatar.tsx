@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTheme } from "@/lib/theme";
 
-/* ── Cit avatar — profile picture for chat/results ─────────────────────────── */
+/* ── Cit avatar — clay mascot bust for profile pictures ────────────────────── */
 
 interface CitAvatarProps {
   size?: number;
-  speaking?: boolean; // external control for mouth animation
+  speaking?: boolean;
 }
 
 export function CitAvatar({ size = 36, speaking = false }: CitAvatarProps) {
-  const { isDark } = useTheme();
   const [mouthPhase, setMouthPhase] = useState(0);
   const animRef = useRef<number | null>(null);
 
@@ -25,7 +23,6 @@ export function CitAvatar({ size = 36, speaking = false }: CitAvatarProps) {
     let t = 0;
     function frame() {
       t += 0.12;
-      // Natural-looking mouth movement: layered sine waves
       const open =
         Math.abs(Math.sin(t * 2.3)) * 0.5 +
         Math.abs(Math.sin(t * 3.7)) * 0.3 +
@@ -40,14 +37,12 @@ export function CitAvatar({ size = 36, speaking = false }: CitAvatarProps) {
     };
   }, [speaking]);
 
-  const bgColor = isDark ? "rgba(0,212,170,0.1)" : "rgba(0,180,140,0.08)";
-  const borderColor = isDark ? "rgba(0,212,170,0.25)" : "rgba(0,180,140,0.2)";
-  const mouthColor = isDark ? "rgba(255,255,255,0.85)" : "rgba(10,22,40,0.75)";
-  const bodyColor = isDark ? "rgba(255,255,255,0.7)" : "rgba(10,22,40,0.6)";
+  const BASE   = "#4B7D50";
+  const LIGHT  = "#5A9460";
+  const SHADOW = "#3D6842";
 
-  const mouthY = 56;
-  const mouthWidth = 5;
-  const mouthHeight = mouthPhase * 3.5;
+  const mouthRx = 3 + mouthPhase * 1.5;
+  const mouthRy = 1.2 + mouthPhase * 3;
 
   return (
     <div
@@ -55,8 +50,8 @@ export function CitAvatar({ size = 36, speaking = false }: CitAvatarProps) {
         width: size,
         height: size,
         borderRadius: "50%",
-        background: bgColor,
-        border: `1.5px solid ${borderColor}`,
+        background: "rgba(75,125,80,0.1)",
+        border: "1.5px solid rgba(75,125,80,0.25)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -65,49 +60,46 @@ export function CitAvatar({ size = 36, speaking = false }: CitAvatarProps) {
       }}
     >
       <svg
-        width={size * 0.75}
-        height={size * 0.75}
+        width={size * 0.82}
+        height={size * 0.82}
         viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="citAvatarGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#00E5B5" />
-            <stop offset="100%" stopColor="#00B894" />
+          <linearGradient id="citAvBodyGrad" x1="0.2" y1="0" x2="0.8" y2="1">
+            <stop offset="0%" stopColor={LIGHT} />
+            <stop offset="40%" stopColor={BASE} />
+            <stop offset="100%" stopColor={SHADOW} />
           </linearGradient>
         </defs>
 
-        {/* Cross head — centered, oversized relative to body */}
-        <rect x="40" y="14" width="20" height="50" rx="6" fill="url(#citAvatarGrad)" />
-        <rect x="22" y="32" width="56" height="20" rx="6" fill="url(#citAvatarGrad)" />
+        {/* Cross head — centered */}
+        <rect x="36" y="6" width="28" height="56" rx="9" fill="url(#citAvBodyGrad)" />
+        <rect x="22" y="20" width="56" height="28" rx="9" fill="url(#citAvBodyGrad)" />
+
+        {/* Head highlights */}
+        <rect x="40" y="10" width="10" height="20" rx="5" fill="rgba(255,255,255,0.07)" />
+        <rect x="27" y="24" width="18" height="10" rx="5" fill="rgba(255,255,255,0.05)" />
 
         {/* Mouth */}
-        {mouthHeight < 0.5 ? (
-          <path
-            d={`M ${50 - mouthWidth} ${mouthY} Q 50 ${mouthY + 1.5} ${50 + mouthWidth} ${mouthY}`}
-            stroke={mouthColor}
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            fill="none"
-          />
-        ) : (
-          <ellipse
-            cx="50"
-            cy={mouthY}
-            rx={mouthWidth * 0.8}
-            ry={mouthHeight}
-            fill={isDark ? "rgba(10,22,40,0.6)" : "rgba(255,255,255,0.7)"}
-            stroke={mouthColor}
-            strokeWidth="0.8"
-          />
-        )}
+        <ellipse
+          cx="50"
+          cy="50"
+          rx={mouthRx}
+          ry={mouthRy}
+          fill="#3A2A20"
+          stroke="#2F5233"
+          strokeWidth="0.6"
+        />
 
-        {/* Neck + shoulders hint */}
-        <line x1="50" y1="64" x2="50" y2="72" stroke={bodyColor} strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="50" y1="72" x2="50" y2="82" stroke={bodyColor} strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="50" y1="75" x2="36" y2="82" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
-        <line x1="50" y1="75" x2="64" y2="82" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
+        {/* Neck + shoulders */}
+        <rect x="44" y="62" width="12" height="10" rx="6" fill={BASE} />
+        {/* Torso top */}
+        <rect x="34" y="70" width="32" height="24" rx="12" fill="url(#citAvBodyGrad)" />
+        {/* Shoulder bumps */}
+        <ellipse cx="32" cy="76" rx="6" ry="8" fill={BASE} />
+        <ellipse cx="68" cy="76" rx="6" ry="8" fill={BASE} />
       </svg>
     </div>
   );
