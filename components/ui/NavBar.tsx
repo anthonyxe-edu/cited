@@ -19,15 +19,19 @@ const items = [
 interface NavBarProps {
   screen: Screen;
   onNav: (s: Screen) => void;
+  isGuest?: boolean;
 }
 
-export function NavBar({ screen, onNav }: NavBarProps) {
+export function NavBar({ screen, onNav, isGuest }: NavBarProps) {
   const { C, isDark } = useTheme();
   const { isMobile, isDesktop, ready } = useBreakpoint();
 
   const navBg     = isDark ? "rgba(10,22,40,0.95)" : "rgba(240,253,250,0.95)";
   const navBorder = isDark ? "rgba(255,255,255,0.09)" : C.border;
   const inactive  = isDark ? "rgba(255,255,255,0.4)" : C.tt;
+
+  // Guest users only see Search tab
+  const visibleItems = isGuest ? items.filter(i => i.id === "home") : items;
 
   const activeId: Screen =
     ["home", "context", "results"].includes(screen) ? "home" :
@@ -78,7 +82,7 @@ export function NavBar({ screen, onNav }: NavBarProps) {
 
         {/* Nav items */}
         <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-          {items.map(({ id, label, Icon }) => {
+          {visibleItems.map(({ id, label, Icon }) => {
             const isActive = activeId === id;
             return (
               <button
@@ -174,7 +178,7 @@ export function NavBar({ screen, onNav }: NavBarProps) {
         boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
         pointerEvents: "auto",
       }}>
-        {items.map(({ id, label, Icon }) => {
+        {visibleItems.map(({ id, label, Icon }) => {
           const isActive = activeId === id;
           return (
             <button

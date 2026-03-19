@@ -153,6 +153,110 @@ function GlobalBackground() {
   );
 }
 
+/* ── Guest paywall overlay ──────────────────────────────────────────────── */
+function GuestPaywall({ onCreateAccount, onSelectPlan }: { onCreateAccount: () => void; onSelectPlan: () => void }) {
+  const { C, isDark } = useTheme();
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        background: isDark ? "rgba(6,14,28,0.92)" : "rgba(240,253,250,0.95)",
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 24,
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.8, 0.25, 1] }}
+        style={{
+          maxWidth: 420, width: "100%", textAlign: "center",
+          display: "flex", flexDirection: "column", gap: 24, alignItems: "center",
+        }}
+      >
+        {/* Icon */}
+        <div style={{
+          width: 64, height: 64, borderRadius: 20,
+          background: "linear-gradient(135deg, #00E5B5, #00B894)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 8px 32px rgba(0,212,170,0.3)",
+        }}>
+          <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+            <rect x="31.5" y="0" width="37" height="100" rx="10" fill="white" />
+            <rect x="0" y="31.5" width="100" height="37" rx="10" fill="white" />
+          </svg>
+        </div>
+
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: "-0.3px" }}>
+            Your free search is complete
+          </h2>
+          <p style={{ fontSize: 15, color: C.ts, margin: 0, lineHeight: 1.6 }}>
+            Create a free account to keep searching, save results, and unlock personalized insights from Cit.
+          </p>
+        </div>
+
+        {/* Tier hints */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", textAlign: "left" }}>
+          {[
+            { tier: "Free", desc: "1 search per day", color: C.ts },
+            { tier: "Basic", desc: "More searches + saved results", color: "#00D4AA" },
+            { tier: "Pro", desc: "Unlimited + Cit voice + priority", color: "#FFD700" },
+          ].map(({ tier, desc, color }) => (
+            <div key={tier} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 14px",
+              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+              borderRadius: 12,
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : C.border}`,
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: 4, background: color, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.text, minWidth: 48 }}>{tier}</span>
+              <span style={{ fontSize: 13, color: C.ts }}>{desc}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA buttons */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+          <button
+            onClick={onCreateAccount}
+            className="gradient-button"
+            style={{
+              border: "none", borderRadius: 14, padding: "15px",
+              color: "white", fontSize: 16, fontWeight: 800,
+              cursor: "pointer", fontFamily: "inherit", width: "100%",
+            }}
+          >
+            Create Free Account
+          </button>
+          <button
+            onClick={onSelectPlan}
+            style={{
+              background: "none",
+              border: `1.5px solid ${isDark ? "rgba(0,212,170,0.3)" : C.border}`,
+              borderRadius: 14, padding: "13px",
+              color: C.ts, fontSize: 14, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", width: "100%",
+            }}
+          >
+            View Plans & Pricing
+          </button>
+        </div>
+
+        <p style={{ fontSize: 11, color: C.tt, margin: 0 }}>
+          Your health data stays private · Nothing uncited.
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function AppInner() {
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -170,6 +274,7 @@ function AppInner() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [savedItems, setSavedItems] = useState<SavedEntry[]>([]);
   const [viewItem, setViewItem] = useState<SavedEntry | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const supabase = createClient();
 
@@ -275,10 +380,9 @@ function AppInner() {
   }
 
   function search(q: string) {
-    // If guest already used their free search, prompt sign-up
+    // If guest already used their free search, show paywall
     if (guestMode && !user && guestSearchDone) {
-      setGuestMode(false);
-      setShowLanding(false);
+      setShowPaywall(true);
       return;
     }
     if (guestMode && !user) setGuestSearchDone(true);
@@ -331,6 +435,11 @@ function AppInner() {
   }
 
   function nav(s: Screen) {
+    // Guest users can only access the search flow
+    if (guestMode && !user && !["home", "context", "results"].includes(s)) {
+      handleGuestSignUp();
+      return;
+    }
     setViewItem(null);
     setScreen(s);
   }
@@ -424,7 +533,14 @@ function AppInner() {
         <PageWrap screenKey={screen} key={screen}>
           {screen === "home" && (
             <HomeScreen
-              onSearch={search}
+              onSearch={(q) => {
+                // Guest returning to home after their free search — show paywall on any new search attempt
+                if (guestMode && !user && guestSearchDone) {
+                  setShowPaywall(true);
+                  return;
+                }
+                search(q);
+              }}
               recentSearches={recentSearches}
               prefillQuery={prefillQuery}
               onClearRecent={() => {
@@ -486,7 +602,21 @@ function AppInner() {
         </PageWrap>
       </AnimatePresence>
 
-      <NavBar screen={activeNav} onNav={nav} />
+      {/* Guest paywall */}
+      {showPaywall && (
+        <GuestPaywall
+          onCreateAccount={() => {
+            setShowPaywall(false);
+            handleGuestSignUp();
+          }}
+          onSelectPlan={() => {
+            setShowPaywall(false);
+            handleGuestSelectPlan();
+          }}
+        />
+      )}
+
+      <NavBar screen={activeNav} onNav={nav} isGuest={guestMode && !user} />
     </>
   );
 }
