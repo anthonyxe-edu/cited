@@ -43,25 +43,22 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
 }
 
 /* ── Cit cross head with expressive mouth ──────────────────────────────────── */
-function CitHead({ mouthOpen, mouthShape, size = 200 }: {
+function CitHead({ mouthOpen, mouthShape, size = 280 }: {
   mouthOpen: number; // 0–1
   mouthShape: number; // 0–1 drives shape variation (wide vs tall, smile vs O)
   size?: number;
 }) {
-  const BASE   = "#4B7D50";
-  const LIGHT  = "#5A9460";
-  const SHADOW = "#3D6842";
-  const DEEP   = "#2F5233";
+  const BASE   = "#00D4AA";
+  const LIGHT  = "#33E0BE";
+  const SHADOW = "#00B894";
+  const DEEP   = "#009B7D";
 
-  // Expressive mouth — blends between shapes based on amplitude + shape
-  // Wide smile (low amplitude), round O (high amplitude), asymmetric shapes in between
   const baseRx = 4;
   const baseRy = 1.8;
   const openRx = baseRx + mouthOpen * 2.5 - mouthShape * mouthOpen * 1.5;
   const openRy = baseRy + mouthOpen * 5 * (0.5 + mouthShape * 0.5);
 
-  // Smile curve: when mostly closed, show a curved smile. When open, round mouth.
-  const smileCurve = Math.max(0, 1 - mouthOpen * 3); // 1 when closed, 0 when open
+  const smileCurve = Math.max(0, 1 - mouthOpen * 3);
   const mouthCy = 72;
 
   return (
@@ -74,58 +71,65 @@ function CitHead({ mouthOpen, mouthShape, size = 200 }: {
       style={{ overflow: "visible" }}
     >
       <defs>
-        <linearGradient id="cG" x1="0.15" y1="0" x2="0.85" y2="1">
+        <linearGradient id="cG" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stopColor={LIGHT} />
-          <stop offset="40%" stopColor={BASE} />
+          <stop offset="35%" stopColor={BASE} />
           <stop offset="100%" stopColor={SHADOW} />
         </linearGradient>
+        <radialGradient id="cShadow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stopColor="rgba(0,212,170,0.18)" />
+          <stop offset="50%" stopColor="rgba(0,184,148,0.08)" />
+          <stop offset="100%" stopColor="rgba(0,212,170,0)" />
+        </radialGradient>
         <filter id="cGlow">
-          <feGaussianBlur stdDeviation="6" result="b" />
+          <feGaussianBlur stdDeviation="8" result="b" />
           <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-        <filter id="cSoft"><feGaussianBlur stdDeviation="2" /></filter>
+        <filter id="cSoftShadow">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
       </defs>
 
-      {/* Ambient glow */}
-      <circle cx="70" cy="70" r="50" fill="rgba(75,125,80,0.08)" filter="url(#cGlow)" />
+      {/* Fluid organic shadow — cross-shaped blur behind the head */}
+      <g filter="url(#cSoftShadow)" opacity="0.35">
+        <rect x="54" y="14" width="32" height="92" rx="12" fill={BASE} />
+        <rect x="22" y="40" width="96" height="38" rx="12" fill={BASE} />
+      </g>
+      {/* Radial ambient glow */}
+      <ellipse cx="70" cy="72" rx="58" ry="54" fill="url(#cShadow)" />
 
       {/* ── Cross head ── */}
-      {/* Vertical bar */}
       <rect x="52" y="10" width="36" height="100" rx="14" fill="url(#cG)" />
-      {/* Horizontal bar */}
       <rect x="18" y="38" width="104" height="44" rx="14" fill="url(#cG)" />
 
       {/* Highlights — top-left light catch */}
-      <rect x="57" y="15" width="14" height="32" rx="7" fill="rgba(255,255,255,0.09)" />
-      <rect x="24" y="43" width="32" height="16" rx="8" fill="rgba(255,255,255,0.06)" />
+      <rect x="57" y="15" width="14" height="32" rx="7" fill="rgba(255,255,255,0.15)" />
+      <rect x="24" y="43" width="32" height="16" rx="8" fill="rgba(255,255,255,0.10)" />
 
       {/* Depth shadows — bottom-right */}
-      <rect x="68" y="80" width="16" height="24" rx="8" fill="rgba(0,0,0,0.04)" />
-      <rect x="96" y="50" width="22" height="22" rx="10" fill="rgba(0,0,0,0.04)" />
+      <rect x="68" y="80" width="16" height="24" rx="8" fill="rgba(0,0,0,0.06)" />
+      <rect x="96" y="50" width="22" height="22" rx="10" fill="rgba(0,0,0,0.05)" />
 
       {/* ── Expressive mouth ── */}
       {smileCurve > 0.5 ? (
-        /* Closed / resting — gentle smile curve */
         <path
           d={`M ${70 - 5} ${mouthCy - 0.5}
               Q 70 ${mouthCy + 2.5 + smileCurve * 1.5} ${70 + 5} ${mouthCy - 0.5}`}
-          stroke="#3A2A20"
+          stroke="#0A1628"
           strokeWidth="1.6"
           strokeLinecap="round"
           fill="none"
         />
       ) : mouthOpen < 0.15 ? (
-        /* Nearly closed — thin line, slight curve */
         <path
           d={`M ${70 - 4.5} ${mouthCy}
               Q 70 ${mouthCy + 1.5} ${70 + 4.5} ${mouthCy}`}
-          stroke="#3A2A20"
+          stroke="#0A1628"
           strokeWidth="1.4"
           strokeLinecap="round"
           fill="none"
         />
       ) : (
-        /* Open — organic blob shape, not a perfect ellipse */
         <g>
           <path
             d={`M ${70 - openRx} ${mouthCy}
@@ -136,25 +140,23 @@ function CitHead({ mouthOpen, mouthShape, size = 200 }: {
                   ${70 - openRx} ${mouthCy + openRy * 1.1},
                   ${70 - openRx} ${mouthCy}
                 Z`}
-            fill="#3A2A20"
+            fill="#0A1628"
             stroke={DEEP}
             strokeWidth="0.6"
           />
-          {/* Tongue / inner highlight when wide open */}
           {mouthOpen > 0.4 && (
             <ellipse
               cx={70}
               cy={mouthCy + openRy * 0.3}
               rx={openRx * 0.45}
               ry={openRy * 0.25}
-              fill="#6B4A3A"
+              fill="#1A3A5C"
             />
           )}
-          {/* Top lip shadow */}
           <path
             d={`M ${70 - openRx + 1} ${mouthCy}
                 Q 70 ${mouthCy - openRy * 0.4} ${70 + openRx - 1} ${mouthCy}`}
-            stroke="rgba(0,0,0,0.08)"
+            stroke="rgba(0,0,0,0.1)"
             strokeWidth="0.8"
             fill="none"
           />
@@ -243,7 +245,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
   function triggerIntro() {
     playChime(chimeCtxRef);
     setIntroSpin(true);
-    setTimeout(() => { setIntroSpin(false); play(); }, 900);
+    setTimeout(() => { setIntroSpin(false); play(); }, 1200);
   }
 
   useEffect(() => {
@@ -265,30 +267,26 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function toggle() { if (status === "playing") pause(); else play(); }
 
-  // Compose transform: intro spin, then idle wander
-  const introTransform = introSpin
-    ? "rotate(360deg) scale(1.1)"
-    : "";
-
   return (
-    <div onClick={toggle} style={{ position: "relative", width: "100%", height: 260, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-      <div style={{
-        opacity: visible ? 1 : 0,
-        transition: introSpin
-          ? "opacity 0.4s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)"
-          : "opacity 1.2s cubic-bezier(0.16,1,0.3,1), transform 1.2s cubic-bezier(0.16,1,0.3,1)",
-        transform: visible
-          ? introTransform || "translateY(0) scale(1)"
-          : "translateY(30px) scale(0.7)",
-        animation: visible && !introSpin ? "citWander 6s ease-in-out infinite" : "none",
-      }}>
-        <CitHead mouthOpen={mouthOpen} mouthShape={mouthShape} size={200} />
+    <div onClick={toggle} style={{ position: "relative", width: "100%", height: 340, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+      <div
+        style={{
+          animation: visible
+            ? introSpin
+              ? "citPopIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards"
+              : "citWander 6s ease-in-out infinite"
+            : "none",
+          opacity: visible ? undefined : 0,
+          transform: visible ? undefined : "scale(0) translateY(60px)",
+        }}
+      >
+        <CitHead mouthOpen={mouthOpen} mouthShape={mouthShape} size={280} />
       </div>
 
       {status === "blocked" && (
         <div style={{
-          position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-          fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+          position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
+          fontSize: 12, fontWeight: 600, letterSpacing: "0.06em",
           color: isDark ? "rgba(0,212,170,0.5)" : "rgba(0,107,87,0.45)",
           fontFamily: "system-ui, sans-serif", animation: "citPulse 2s ease-in-out infinite", whiteSpace: "nowrap",
         }}>
@@ -298,6 +296,14 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
       <style>{`
         @keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes citPopIn {
+          0%   { opacity: 0; transform: scale(0) translateY(60px) rotate(0deg); }
+          30%  { opacity: 1; transform: scale(1.15) translateY(-10px) rotate(540deg); }
+          55%  { transform: scale(0.95) translateY(4px) rotate(900deg); }
+          70%  { transform: scale(1.05) translateY(-2px) rotate(1020deg); }
+          85%  { transform: scale(0.98) translateY(1px) rotate(1070deg); }
+          100% { opacity: 1; transform: scale(1) translateY(0) rotate(1080deg); }
+        }
         @keyframes citWander {
           0%   { transform: translate(0, 0) rotate(0deg); }
           15%  { transform: translate(12px, -8px) rotate(3deg); }
