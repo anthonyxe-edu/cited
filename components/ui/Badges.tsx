@@ -86,10 +86,13 @@ interface DbBadgeProps {
 
 export function DbBadge({ db }: DbBadgeProps) {
   const colors: Record<string, { c: string; bg: string }> = {
-    PubMed:          { c: "#326599", bg: "#32659915" },
-    EuropePMC:       { c: "#2A7F62", bg: "#2A7F6215" },
-    "Google Scholar":{ c: "#C53929", bg: "#C5392915" },
-    Other:           { c: C.ts,      bg: `${C.ts}15`  },
+    PubMed:                  { c: "#326599", bg: "#32659915" },
+    PMC:                     { c: "#1A6B50", bg: "#1A6B5015" },
+    "Semantic Scholar":      { c: "#6B4C9A", bg: "#6B4C9A15" },
+    "ClinicalTrials.gov":    { c: "#C4712B", bg: "#C4712B15" },
+    EuropePMC:               { c: "#2A7F62", bg: "#2A7F6215" },
+    "Google Scholar":        { c: "#C53929", bg: "#C5392915" },
+    Other:                   { c: C.ts,      bg: `${C.ts}15`  },
   };
   const x = colors[db] ?? colors.Other;
   return (

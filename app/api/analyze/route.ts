@@ -81,7 +81,8 @@ Return ONLY valid JSON:
   "safety_note": "One important safety or limitation note."
 }
 
-CRITICAL: Every factual claim MUST have [X] citation numbers. This is the core feature — nothing uncited.`,
+CRITICAL: Every factual claim MUST have [X] citation numbers. This is the core feature — nothing uncited.
+CRITICAL: Only reference sources [1] through [${Math.min(sources.length, 5)}]. Do NOT invent citation numbers beyond what is provided.`,
         },
       ],
     });
