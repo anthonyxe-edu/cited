@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { CitAvatar } from "@/components/ui/CitAvatar";
+import { Slider, SliderThumb } from "@/components/ui/slider";
 
 interface CITEDListenProps {
   text: string;
@@ -27,7 +28,6 @@ export function CITEDListen({ text, query = "", className }: CITEDListenProps) {
   const audioRef     = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const animRef      = useRef<number | null>(null);
-  const sliderRef    = useRef<HTMLInputElement | null>(null);
 
   function startTick() {
     function tick() {
@@ -98,8 +98,8 @@ export function CITEDListen({ text, query = "", className }: CITEDListenProps) {
     }
   }
 
-  function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
-    const t = parseFloat(e.target.value);
+  function handleSeek(value: number[]) {
+    const t = value[0];
     if (audioRef.current) audioRef.current.currentTime = t;
     setElapsed(t);
   }
@@ -113,38 +113,41 @@ export function CITEDListen({ text, query = "", className }: CITEDListenProps) {
   const isPlaying = state === "playing";
   const isLoading = state === "loading";
   const hasAudio  = state !== "idle";
-  const pct = duration > 0 ? (elapsed / duration) * 100 : 0;
 
   return (
     <div className={cn("w-full", className)}>
       <div style={{
         background: "rgba(0,212,170,0.06)",
         border: "1px solid rgba(0,212,170,0.15)",
-        borderRadius: 16,
-        padding: "10px 14px",
+        borderRadius: 18,
+        padding: "12px 14px",
         display: "flex",
         alignItems: "center",
-        gap: 10,
+        gap: 12,
       }}>
 
         {/* Cit avatar */}
-        <CitAvatar size={42} speaking={isPlaying} />
+        <CitAvatar size={44} speaking={isPlaying} />
 
         {/* Middle: play + slider + time */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* Play/pause button */}
             <button
               onClick={handlePlayPause}
               disabled={isLoading}
               style={{
-                width: 32, height: 32, borderRadius: "50%",
+                width: 34, height: 34, borderRadius: "50%",
                 background: "#00D4AA",
                 border: "none",
                 cursor: isLoading ? "wait" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
+                transition: "transform 0.15s",
               }}
+              onMouseDown={e => (e.currentTarget.style.transform = "scale(0.92)")}
+              onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
             >
               {isLoading ? (
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ animation: "citListenSpin 1s linear infinite" }}>
@@ -163,45 +166,28 @@ export function CITEDListen({ text, query = "", className }: CITEDListenProps) {
               )}
             </button>
 
-            {/* Timeline slider */}
-            <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center" }}>
-              <div style={{
-                position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
-                width: "100%", height: 4, borderRadius: 2,
-                background: "rgba(0,212,170,0.12)",
-              }}>
-                <div style={{
-                  height: "100%", width: `${pct}%`, borderRadius: 2,
-                  background: "linear-gradient(90deg, #00D4AA, #00E5B5)",
-                  transition: "width 0.1s linear",
-                }} />
-              </div>
-              <input
-                ref={sliderRef}
-                type="range"
+            {/* Radix slider */}
+            <div style={{ flex: 1 }}>
+              <Slider
+                value={[elapsed]}
                 min={0}
                 max={duration || 1}
                 step={0.1}
-                value={elapsed}
-                onChange={handleSeek}
+                onValueChange={handleSeek}
                 disabled={!hasAudio}
-                style={{
-                  width: "100%", height: 20,
-                  WebkitAppearance: "none", appearance: "none",
-                  background: "transparent", cursor: hasAudio ? "pointer" : "default",
-                  position: "relative", zIndex: 1, margin: 0,
-                }}
-              />
+              >
+                <SliderThumb />
+              </Slider>
             </div>
           </div>
 
           {/* Time + speed */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: 40 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: 44 }}>
             <span style={{
               fontFamily: "monospace", fontSize: 11,
               color: "rgba(0,212,170,0.5)",
             }}>
-              {hasAudio ? `${formatTime(elapsed)} / ${formatTime(duration)}` : "Tap to listen"}
+              {hasAudio ? `${formatTime(elapsed)} / ${formatTime(duration)}` : "Tap play to listen"}
             </span>
 
             {hasAudio && (
@@ -230,25 +216,6 @@ export function CITEDListen({ text, query = "", className }: CITEDListenProps) {
 
       <style>{`
         @keyframes citListenSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none;
-          width: 12px; height: 12px; border-radius: 50%;
-          background: #00D4AA; border: 2px solid #0A1628;
-          box-shadow: 0 0 6px rgba(0,212,170,0.5);
-          cursor: pointer;
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 12px; height: 12px; border-radius: 50%;
-          background: #00D4AA; border: 2px solid #0A1628;
-          box-shadow: 0 0 6px rgba(0,212,170,0.5);
-          cursor: pointer;
-        }
-        input[type="range"]::-webkit-slider-runnable-track {
-          background: transparent; height: 4px;
-        }
-        input[type="range"]::-moz-range-track {
-          background: transparent; height: 4px;
-        }
       `}</style>
     </div>
   );
