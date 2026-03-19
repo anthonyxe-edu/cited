@@ -75,7 +75,7 @@ const HOW_IT_WORKS = [
   {
     num: "02",
     title: "AI searches the literature",
-    body: "CITED scans PubMed and peer-reviewed medical databases in real time, pulling the most relevant studies for your question.",
+    body: "CITED queries PubMed, PubMed Central, Semantic Scholar, and ClinicalTrials.gov in parallel — pulling verified studies with real DOIs from across the clinical research landscape.",
   },
   {
     num: "03",
@@ -97,7 +97,7 @@ const PLANS = [
     yearlyPrice: 0,
     period: "/mo",
     desc: "Get started today",
-    features: ["3 AI searches / month", "5 follow-up searches / week", "Evidence summaries", "Personalized context"],
+    features: ["3 premium searches / month", "5 follow-up searches / week", "Evidence summaries", "Personalized context"],
     cta: "Get Started",
     featured: false,
   },
@@ -108,7 +108,7 @@ const PLANS = [
     yearlyPrice: 7.99,
     period: "/mo",
     desc: "For regular health research",
-    features: ["25 premium searches / month", "30 follow-up searches / week", "All Free features", "Priority processing"],
+    features: ["25 premium searches / month", "30 follow-up searches / week", "Save & export results", "All Free features"],
     cta: "Get Basic",
     featured: true,
   },
@@ -119,7 +119,7 @@ const PLANS = [
     yearlyPrice: 19.99,
     period: "/mo",
     desc: "For power users",
-    features: ["75 premium searches / month", "200 follow-up searches / week", "All Basic features", "Highest capabilities"],
+    features: ["75 premium searches / month", "200 follow-up searches / week", "Cit voice responses", "All Basic features"],
     cta: "Get Pro",
     featured: false,
   },
@@ -127,15 +127,19 @@ const PLANS = [
 
 // ─── How It Works view ────────────────────────────────────────────────────────
 function HowItWorksView({ onBack }: { onBack: () => void }) {
-  const { C } = useTheme();
+  const { C, isDark } = useTheme();
   return (
     <div style={{
       minHeight: "100vh", background: C.bg,
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", padding: "48px 24px",
       fontFamily: "system-ui, -apple-system, sans-serif",
+      position: "relative", overflow: "hidden",
     }}>
-      <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", gap: 36 }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <SparklesCore background="transparent" minSize={0.3} maxSize={0.9} particleDensity={40} particleColor={isDark ? "#00D4AA" : "#006B57"} speed={0.4} className="w-full h-full" />
+      </div>
+      <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", gap: 36, position: "relative", zIndex: 1 }}>
         <BackButton onClick={onBack} />
 
         <div>
@@ -182,8 +186,8 @@ function HowItWorksView({ onBack }: { onBack: () => void }) {
           borderRadius: 16, padding: "18px 22px",
           fontSize: 14, color: C.ts, lineHeight: 1.7,
         }}>
-          <span style={{ color: C.primary, fontWeight: 700 }}>Built on PubMed. </span>
-          Every result CITED returns is traceable to a real peer-reviewed study. No opinion pieces, no blogs — only verified research with source links you can open directly.
+          <span style={{ color: C.primary, fontWeight: 700 }}>Built on real research databases. </span>
+          Every result CITED returns is traceable to a real peer-reviewed study across PubMed, PMC, Semantic Scholar, and ClinicalTrials.gov. No opinion pieces, no blogs — only verified research with DOIs you can open directly.
         </div>
       </div>
     </div>
@@ -263,8 +267,12 @@ function PlansView({ onSelectPlan, onBack }: { onSelectPlan: (p: "free" | "basic
         minHeight: "100vh", background: C.bg,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "48px 24px", fontFamily: "system-ui, -apple-system, sans-serif",
+        position: "relative", overflow: "hidden",
       }}>
-        <div style={{ maxWidth: 440, textAlign: "center", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+          <SparklesCore background="transparent" minSize={0.3} maxSize={0.9} particleDensity={40} particleColor={isDark ? "#00D4AA" : "#006B57"} speed={0.4} className="w-full h-full" />
+        </div>
+        <div style={{ maxWidth: 440, textAlign: "center", display: "flex", flexDirection: "column", gap: 20, position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <CitedMark size={56} />
           </div>
@@ -293,8 +301,12 @@ function PlansView({ onSelectPlan, onBack }: { onSelectPlan: (p: "free" | "basic
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: "48px 24px",
         fontFamily: "system-ui, -apple-system, sans-serif",
+        position: "relative", overflow: "hidden",
       }}>
-        <div style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: 28 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+          <SparklesCore background="transparent" minSize={0.3} maxSize={0.9} particleDensity={40} particleColor={isDark ? "#00D4AA" : "#006B57"} speed={0.4} className="w-full h-full" />
+        </div>
+        <div style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: 28, position: "relative", zIndex: 1 }}>
           <BackButton onClick={() => { setAuthFor(null); setAuthError(""); }} />
           <div>
             <span style={{ fontSize: 12, fontWeight: 700, color: C.primary, letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -349,8 +361,12 @@ function PlansView({ onSelectPlan, onBack }: { onSelectPlan: (p: "free" | "basic
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", padding: "48px 24px",
       fontFamily: "system-ui, -apple-system, sans-serif",
+      position: "relative", overflow: "hidden",
     }}>
-      <div style={{ width: "100%", maxWidth: 920, display: "flex", flexDirection: "column", alignItems: "center", gap: 40 }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <SparklesCore background="transparent" minSize={0.3} maxSize={0.9} particleDensity={40} particleColor={isDark ? "#00D4AA" : "#006B57"} speed={0.4} className="w-full h-full" />
+      </div>
+      <div style={{ width: "100%", maxWidth: 920, display: "flex", flexDirection: "column", alignItems: "center", gap: 40, position: "relative", zIndex: 1 }}>
         <div style={{ width: "100%", display: "flex", justifyContent: "flex-start" }}>
           <BackButton onClick={onBack} />
         </div>

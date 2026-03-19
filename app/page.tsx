@@ -204,9 +204,9 @@ function GuestPaywall({ onCreateAccount, onSelectPlan }: { onCreateAccount: () =
         {/* Tier hints */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", textAlign: "left" }}>
           {[
-            { tier: "Free", desc: "1 search per day", color: C.ts },
-            { tier: "Basic", desc: "More searches + saved results", color: "#00D4AA" },
-            { tier: "Pro", desc: "Unlimited + Cit voice + priority", color: "#FFD700" },
+            { tier: "Free", desc: "3 premium + 5 follow-up / mo", color: C.ts },
+            { tier: "Basic", desc: "25 premium + 30 follow-up / mo", color: "#00D4AA" },
+            { tier: "Pro", desc: "75 premium + 200 follow-up + Cit voice", color: "#FFD700" },
           ].map(({ tier, desc, color }) => (
             <div key={tier} style={{
               display: "flex", alignItems: "center", gap: 10,

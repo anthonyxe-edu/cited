@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon } from "lucide-react";
+import { SparklesCore } from "@/components/ui/sparkles";
 
 interface AuthScreenProps {
   onAuthed: () => void;
@@ -98,8 +99,12 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
         minHeight: "100vh", background: C.bg,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "48px 24px", fontFamily: "system-ui, -apple-system, sans-serif",
+        position: "relative", overflow: "hidden",
       }}>
-        <div style={{ maxWidth: 440, width: "100%", textAlign: "center", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+          <SparklesCore background="transparent" minSize={0.3} maxSize={0.9} particleDensity={40} particleColor={isDark ? "#00D4AA" : "#006B57"} speed={0.4} className="w-full h-full" />
+        </div>
+        <div style={{ maxWidth: 440, width: "100%", textAlign: "center", display: "flex", flexDirection: "column", gap: 20, position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <CitedMark size={52} />
           </div>
@@ -131,15 +136,18 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", padding: "48px 24px",
       fontFamily: "system-ui, -apple-system, sans-serif",
-      position: "relative",
+      position: "relative", overflow: "hidden",
     }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <SparklesCore background="transparent" minSize={0.3} maxSize={0.9} particleDensity={40} particleColor={isDark ? "#00D4AA" : "#006B57"} speed={0.4} className="w-full h-full" />
+      </div>
       {/* Theme toggle */}
-      <button onClick={toggle} aria-label="Toggle theme" style={{ position: "absolute", top: 20, right: 24, background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: 10, padding: "8px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: C.ts, fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+      <button onClick={toggle} aria-label="Toggle theme" style={{ position: "absolute", top: 20, right: 24, zIndex: 2, background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: 10, padding: "8px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: C.ts, fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
         {isDark ? <Sun size={14} /> : <Moon size={14} />}
         {isDark ? "Light" : "Dark"}
       </button>
 
-      <div style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: 28 }}>
+      <div style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: 28, position: "relative", zIndex: 1 }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <CitedMark size={36} />
