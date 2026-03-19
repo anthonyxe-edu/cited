@@ -13,6 +13,18 @@ const FORM_MS        = 1200;
 const WAVE_START = 0.32;
 const WAVE_END   = 0.68;
 
+/* ── test if audio is likely allowed (user has interacted with page) ────── */
+function canAutoplay(): boolean {
+  try {
+    const ctx = new AudioContext();
+    const allowed = ctx.state === "running";
+    ctx.close();
+    return allowed;
+  } catch {
+    return false;
+  }
+}
+
 /* ── sparkle chime via Web Audio API ────────────────────────────────────────── */
 function playChime(ref: React.MutableRefObject<AudioContext | null>) {
   try {
@@ -182,6 +194,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
   const timeRef     = useRef(0);
   const ampRef      = useRef(0);
   const chimeCtxRef = useRef<AudioContext | null>(null);
+  const interactionCleanupRef = useRef<(() => void) | null>(null);
 
   /* ---- animation loop ---- */
   function startViz() {
@@ -257,31 +270,46 @@ export function CitHero({ onEnded }: CitHeroProps) {
     setStatus("paused");
   }
 
-  /* ---- attempt play (with autoplay-policy fallback) ---- */
-  const hasTriedRef = useRef(false);
-  const interactionCleanupRef = useRef<(() => void) | null>(null);
-
-  function attemptPlay() {
-    if (hasTriedRef.current && status !== "blocked") return;
-    hasTriedRef.current = true;
+  /* ---- full intro sequence: chime → line → speech ---- */
+  function runIntro() {
+    // Clean up any existing listeners
+    interactionCleanupRef.current?.();
 
     // Chime + line formation
     playChime(chimeCtxRef);
     setLineFormed(true);
 
-    // Audio play
-    play();
+    // Speech after short delay
+    setTimeout(() => play(), 800);
+  }
+
+  /* ---- register listeners for first user interaction ---- */
+  function waitForInteraction() {
+    setStatus("blocked");
+    // Show the line immediately (visual-only, no audio)
+    setLineFormed(true);
+
+    function onInteraction() {
+      cleanup();
+      // User gesture context is now available — run full intro
+      playChime(chimeCtxRef);
+      play();
+    }
+    function cleanup() {
+      document.removeEventListener("click", onInteraction);
+      document.removeEventListener("touchstart", onInteraction);
+      document.removeEventListener("keydown", onInteraction);
+      interactionCleanupRef.current = null;
+    }
+    document.addEventListener("click", onInteraction, { once: true });
+    document.addEventListener("touchstart", onInteraction, { once: true });
+    document.addEventListener("keydown", onInteraction, { once: true });
+    interactionCleanupRef.current = cleanup;
   }
 
   /* ---- lifecycle ---- */
   useEffect(() => {
-    // Phase 1: chime + line formation
-    const chimeT = setTimeout(() => {
-      playChime(chimeCtxRef);
-      setLineFormed(true);
-    }, CHIME_DELAY);
-
-    // Phase 2: audio autoplay
+    // Set up the audio element
     const audio      = new Audio(AUDIO_SRC);
     audio.preload    = "auto";
     audioRef.current = audio;
@@ -290,55 +318,42 @@ export function CitHero({ onEnded }: CitHeroProps) {
       setStatus("ended");
       onEnded?.();
     };
-    const playT = setTimeout(async () => {
-      try {
-        if (!audioCtxRef.current) {
-          const ctx      = new AudioContext();
-          const analyser = ctx.createAnalyser();
-          analyser.fftSize = 2048;
-          analyser.smoothingTimeConstant = 0.88;
-          ctx.createMediaElementSource(audio).connect(analyser);
-          analyser.connect(ctx.destination);
-          audioCtxRef.current = ctx;
-          analyserRef.current = analyser;
-        }
-        if (audioCtxRef.current.state === "suspended") {
-          await audioCtxRef.current.resume();
-        }
-        await audio.play();
-        setStatus("playing");
-        startViz();
-      } catch {
-        // Autoplay blocked — wait for ANY user interaction, then play
-        setStatus("blocked");
-        function onInteraction() {
-          cleanup();
-          // Re-attempt with user gesture context
-          playChime(chimeCtxRef);
-          play();
-        }
-        function cleanup() {
-          document.removeEventListener("click", onInteraction);
-          document.removeEventListener("touchstart", onInteraction);
-          document.removeEventListener("keydown", onInteraction);
-          interactionCleanupRef.current = null;
-        }
-        document.addEventListener("click", onInteraction, { once: true });
-        document.addEventListener("touchstart", onInteraction, { once: true });
-        document.addEventListener("keydown", onInteraction, { once: true });
-        interactionCleanupRef.current = cleanup;
-      }
-    }, AUTOPLAY_DELAY);
 
-    return () => {
-      clearTimeout(chimeT);
-      clearTimeout(playT);
-      audio.pause();
-      stopViz();
-      audioCtxRef.current?.close();
-      chimeCtxRef.current?.close();
-      interactionCleanupRef.current?.();
-    };
+    // Check if audio is allowed (user has previously interacted with the page)
+    const allowed = canAutoplay();
+
+    if (allowed) {
+      // User already interacted (e.g., came from within app via sign-out click)
+      // Run the full intro with timers
+      const chimeT = setTimeout(() => {
+        playChime(chimeCtxRef);
+        setLineFormed(true);
+      }, CHIME_DELAY);
+
+      const playT = setTimeout(() => play(), AUTOPLAY_DELAY);
+
+      return () => {
+        clearTimeout(chimeT);
+        clearTimeout(playT);
+        audio.pause();
+        stopViz();
+        audioCtxRef.current?.close();
+        chimeCtxRef.current?.close();
+        interactionCleanupRef.current?.();
+      };
+    } else {
+      // Fresh visit — no prior interaction. Set up listeners immediately
+      // so the FIRST click/tap/key anywhere on the page triggers the intro.
+      waitForInteraction();
+
+      return () => {
+        audio.pause();
+        stopViz();
+        audioCtxRef.current?.close();
+        chimeCtxRef.current?.close();
+        interactionCleanupRef.current?.();
+      };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
