@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { CitAvatar } from "@/components/ui/CitAvatar";
 
 interface CITEDListenProps {
   text: string;
@@ -313,38 +314,36 @@ export function CITEDListen({ text, query = "", className }: CITEDListenProps) {
             <span style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", fontWeight: 700 }}>5s</span>
           </button>
 
-          {/* Main button */}
+          {/* Main button — Cit avatar with animated mouth */}
           <button onClick={handlePlayPause} disabled={isLoading}
             style={{
-              width: 64, height: 64, borderRadius: 18, cursor: isLoading ? "wait" : "pointer",
-              background: "rgba(0,212,170,0.10)", border: "1.5px solid rgba(0,212,170,0.25)",
+              width: 68, height: 68, borderRadius: 20, cursor: isLoading ? "wait" : "pointer",
+              background: "rgba(0,212,170,0.06)", border: "1.5px solid rgba(0,212,170,0.2)",
               display: "flex", alignItems: "center", justifyContent: "center",
               position: "relative",
             }}>
-            <div style={{ position: "absolute", opacity: isLoading ? 1 : 0, transition: "opacity 0.2s", pointerEvents: "none" }}>
+            {isLoading ? (
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ animation: "cited-listen-spin 1s linear infinite" }}>
                 <circle cx="14" cy="14" r="10" stroke="rgba(0,212,170,0.18)" strokeWidth="2.5"/>
                 <path d="M14 4 A10 10 0 0 1 24 14" stroke="#00D4AA" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
-            </div>
-            <span style={{
-              position: "absolute", fontSize: 30, fontWeight: 900, color: "#00D4AA", fontFamily: "system-ui,sans-serif",
-              opacity: isPlaying ? 1 : 0, transform: isPlaying ? "scale(1)" : "scale(0.5)",
-              transition: "opacity 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.28s cubic-bezier(0.4,0,0.2,1)",
-              animation: isPlaying ? "cited-spin-burst 3.6s cubic-bezier(0.22,0,0.1,1) infinite" : "none",
-              pointerEvents: "none",
-            }}>✚</span>
-            <div style={{
-              position: "absolute",
-              opacity: !isPlaying && !isLoading ? 1 : 0, transform: !isPlaying && !isLoading ? "scale(1)" : "scale(0.5)",
-              transition: "opacity 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.28s cubic-bezier(0.4,0,0.2,1)",
-              pointerEvents: "none",
-            }}>
-              {hasStarted
-                ? <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M7 4.5L18 11L7 17.5V4.5Z" fill="#00D4AA"/></svg>
-                : <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#00D4AA" strokeWidth="1.5"/><path d="M9 7.5L15 11L9 14.5V7.5Z" fill="#00D4AA"/></svg>
-              }
-            </div>
+            ) : (
+              <div style={{ position: "relative" }}>
+                <CitAvatar size={52} speaking={isPlaying} />
+                {/* Play overlay when idle/paused */}
+                {!isPlaying && (
+                  <div style={{
+                    position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                    background: "rgba(0,0,0,0.3)", borderRadius: "50%",
+                    opacity: 0.8, transition: "opacity 0.2s",
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M5 3L13 8L5 13V3Z" fill="#00D4AA" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            )}
           </button>
 
           <button onClick={() => skip(5)} disabled={!hasStarted || isLoading}

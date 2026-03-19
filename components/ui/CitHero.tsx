@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useTheme } from "@/lib/theme";
 
 const AUDIO_SRC      = "/audio/cit-intro.mp3";
 const AUTOPLAY_DELAY = 2200;
-const POINTS         = 128;
 const CHIME_DELAY    = 400;
-const FORM_MS        = 1200;
 
-// Where the waveform zone lives (fraction of width) — tight center only
-const WAVE_START = 0.32;
-const WAVE_END   = 0.68;
-
-/* ── test if audio is likely allowed (user has interacted with page) ────── */
+/* ── test if audio is likely allowed ───────────────────────────────────────── */
 function canAutoplay(): boolean {
   try {
     const ctx = new AudioContext();
@@ -32,7 +26,6 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
     ref.current = ctx;
     const now = ctx.currentTime;
 
-    // Main sparkle — triangle wave with downward sweep
     const o1 = ctx.createOscillator();
     const g1 = ctx.createGain();
     o1.type = "triangle";
@@ -45,7 +38,6 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
     o1.start(now);
     o1.stop(now + 0.5);
 
-    // High shimmer
     const o2 = ctx.createOscillator();
     const g2 = ctx.createGain();
     o2.type = "sine";
@@ -56,7 +48,6 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
     o2.start(now);
     o2.stop(now + 0.25);
 
-    // Warm undertone
     const o3 = ctx.createOscillator();
     const g3 = ctx.createGain();
     o3.type = "sine";
@@ -66,110 +57,126 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
     o3.connect(g3).connect(ctx.destination);
     o3.start(now + 0.05);
     o3.stop(now + 0.6);
-  } catch {
-    /* autoplay policy — chime is best-effort */
-  }
+  } catch { /* best-effort */ }
 }
 
-/* ── canvas waveform ────────────────────────────────────────────────────────── */
-function drawWave(
-  canvas: HTMLCanvasElement,
-  active: boolean,
-  isDark: boolean,
-  t: number,
-  amp: number,
-) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+/* ── Cit SVG character ─────────────────────────────────────────────────────── */
+function CitCharacter({
+  mouthOpen,
+  isDark,
+  size = 220,
+}: {
+  mouthOpen: number; // 0–1
+  isDark: boolean;
+  size?: number;
+}) {
+  const bodyColor = isDark ? "rgba(255,255,255,0.85)" : "rgba(10,22,40,0.75)";
+  const jointColor = isDark ? "rgba(255,255,255,0.5)" : "rgba(10,22,40,0.4)";
+  const mouthColor = isDark ? "rgba(255,255,255,0.9)" : "rgba(10,22,40,0.8)";
+  const glowColor  = isDark ? "rgba(0,212,170,0.25)" : "rgba(0,180,140,0.2)";
 
-  const dpr = window.devicePixelRatio || 1;
-  const W   = canvas.offsetWidth;
-  const H   = canvas.offsetHeight;
-  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
-    canvas.width  = W * dpr;
-    canvas.height = H * dpr;
-    ctx.scale(dpr, dpr);
-  }
-  ctx.clearRect(0, 0, W, H);
+  // Mouth: curved line that opens into an ellipse when speaking
+  const mouthY = 68;
+  const mouthWidth = 6;
+  const mouthHeight = mouthOpen * 4; // 0 when closed, 4 when fully open
 
-  if (!active || amp < 0.005) return;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 140"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ overflow: "visible" }}
+    >
+      <defs>
+        <linearGradient id="citCrossGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#00E5B5" />
+          <stop offset="100%" stopColor="#00B894" />
+        </linearGradient>
+        <filter id="citGlow">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="citSoftGlow">
+          <feGaussianBlur stdDeviation="8" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
 
-  const cy    = H / 2;
-  const teal  = isDark ? "0,180,145"   : "0,107,87";
-  const white = isDark ? "0,212,170"   : "0,140,112";
+      {/* ── Ambient glow behind head ── */}
+      <circle cx="50" cy="50" r="30" fill={glowColor} filter="url(#citSoftGlow)" />
 
-  /* Build Y-values: flat at edges, smooth sine-wave in center zone */
-  const ys: number[] = Array.from({ length: POINTS }, (_, i) => {
-    const pos = i / (POINTS - 1);
+      {/* ── Cross head (oversized — the CITED + mark) ── */}
+      <g filter="url(#citGlow)">
+        {/* Vertical bar */}
+        <rect x="41" y="24" width="18" height="52" rx="6" fill="url(#citCrossGrad)" />
+        {/* Horizontal bar */}
+        <rect x="24" y="41" width="52" height="18" rx="6" fill="url(#citCrossGrad)" />
+      </g>
 
-    // Edge opacity fade (matches the CSS gradient transparent → color → transparent)
-    const edgeFade = Math.min(pos / 0.06, 1) * Math.min((1 - pos) / 0.06, 1);
+      {/* ── Mouth (on the cross, lower center) ── */}
+      {mouthHeight < 0.5 ? (
+        // Closed: small curved smile line
+        <path
+          d={`M ${50 - mouthWidth} ${mouthY} Q 50 ${mouthY + 2} ${50 + mouthWidth} ${mouthY}`}
+          stroke={mouthColor}
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          fill="none"
+        />
+      ) : (
+        // Open: ellipse mouth
+        <ellipse
+          cx="50"
+          cy={mouthY}
+          rx={mouthWidth * 0.8}
+          ry={mouthHeight}
+          fill={isDark ? "rgba(10,22,40,0.7)" : "rgba(255,255,255,0.8)"}
+          stroke={mouthColor}
+          strokeWidth="1"
+        />
+      )}
 
-    // Waveform zone: steep power-curve envelope — peaks sharply in center, subsides fast
-    let waveFade = 0;
-    if (pos > WAVE_START && pos < WAVE_END) {
-      const zonePos = (pos - WAVE_START) / (WAVE_END - WAVE_START);
-      waveFade = Math.pow(Math.sin(zonePos * Math.PI), 2.5);
-    }
+      {/* ── Neck ── */}
+      <line x1="50" y1="76" x2="50" y2="84" stroke={bodyColor} strokeWidth="2.5" strokeLinecap="round" />
 
-    // Layered sine waves — organic, non-repeating feel
-    const wave =
-      Math.sin(pos * Math.PI * 3   + t * 2.1) * 0.48 +
-      Math.sin(pos * Math.PI * 5   + t * 1.3) * 0.30 +
-      Math.sin(pos * Math.PI * 1.5 + t * 2.8) * 0.22;
+      {/* ── Torso ── */}
+      <line x1="50" y1="84" x2="50" y2="110" stroke={bodyColor} strokeWidth="2.5" strokeLinecap="round" />
 
-    return cy + wave * waveFade * edgeFade * cy * 0.88 * amp;
-  });
+      {/* ── Arms ── */}
+      {/* Left arm */}
+      <line x1="50" y1="89" x2="36" y2="96" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
+      <line x1="36" y1="96" x2="30" y2="105" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
+      <circle cx="36" cy="96" r="1.5" fill={jointColor} />
 
-  /* Gradient that exactly replicates the CSS line */
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0,    `rgba(${teal},0)`);
-  grad.addColorStop(0.06, `rgba(${teal},0.7)`);
-  grad.addColorStop(0.28, `rgba(${teal},0.9)`);
-  grad.addColorStop(0.5,  `rgba(${white},1)`);
-  grad.addColorStop(0.72, `rgba(${teal},0.9)`);
-  grad.addColorStop(0.94, `rgba(${teal},0.7)`);
-  grad.addColorStop(1,    `rgba(${teal},0)`);
+      {/* Right arm */}
+      <line x1="50" y1="89" x2="64" y2="96" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
+      <line x1="64" y1="96" x2="70" y2="105" stroke={bodyColor} strokeWidth="2" strokeLinecap="round" />
+      <circle cx="64" cy="96" r="1.5" fill={jointColor} />
 
-  ctx.lineJoin = "round";
-  ctx.lineCap  = "round";
+      {/* ── Legs ── */}
+      {/* Left leg */}
+      <line x1="50" y1="110" x2="40" y2="126" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="40" y1="126" x2="37" y2="138" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="40" cy="126" r="1.5" fill={jointColor} />
 
-  function buildPath() {
-    ctx!.beginPath();
-    ctx!.moveTo(0, ys[0]);
-    for (let i = 1; i < POINTS; i++) {
-      const x0 = ((i - 1) / (POINTS - 1)) * W;
-      const x1 = (i       / (POINTS - 1)) * W;
-      const mx = (x0 + x1) / 2;
-      ctx!.quadraticCurveTo(x0, ys[i - 1], mx, (ys[i - 1] + ys[i]) / 2);
-    }
-    ctx!.lineTo(W, ys[POINTS - 1]);
-  }
+      {/* Right leg */}
+      <line x1="50" y1="110" x2="60" y2="126" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="60" y1="126" x2="63" y2="138" stroke={bodyColor} strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="60" cy="126" r="1.5" fill={jointColor} />
 
-  /* Pass 1 — blurred outer glow (≈ CSS blur-sm line) */
-  buildPath();
-  ctx.strokeStyle = `rgba(${teal},0.7)`;
-  ctx.lineWidth   = 3;
-  ctx.filter      = "blur(1px)";
-  ctx.stroke();
-  ctx.filter      = "none";
-
-  /* Pass 2 — sharp gradient core (≈ CSS h-px line) */
-  buildPath();
-  ctx.strokeStyle = grad;
-  ctx.lineWidth   = 1.5;
-  ctx.shadowColor = `rgba(${white},0.8)`;
-  ctx.shadowBlur  = 3;
-  ctx.stroke();
-  ctx.shadowBlur  = 0;
-
-  /* Pass 3 — center hot glow (≈ CSS center hotspot) */
-  buildPath();
-  ctx.strokeStyle = `rgba(${white},0.5)`;
-  ctx.lineWidth   = 2;
-  ctx.filter      = "blur(1.5px)";
-  ctx.stroke();
-  ctx.filter      = "none";
+      {/* ── Joint circles ── */}
+      <circle cx="50" cy="84" r="2" fill={jointColor} /> {/* shoulder */}
+      <circle cx="50" cy="110" r="2" fill={jointColor} /> {/* hip */}
+    </svg>
+  );
 }
 
 /* ── component ──────────────────────────────────────────────────────────────── */
@@ -182,60 +189,41 @@ export function CitHero({ onEnded }: CitHeroProps) {
   const [status, setStatus] = useState<
     "idle" | "playing" | "paused" | "ended" | "blocked"
   >("idle");
-  const [lineFormed, setLineFormed] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [mouthOpen, setMouthOpen] = useState(0);
 
-  const audioRef    = useRef<HTMLAudioElement | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const canvasRef   = useRef<HTMLCanvasElement | null>(null);
-  const animRef     = useRef<number | null>(null);
-  const isDarkRef   = useRef(isDark);
-  isDarkRef.current = isDark;
-  const timeRef     = useRef(0);
-  const ampRef      = useRef(0);
-  const chimeCtxRef = useRef<AudioContext | null>(null);
+  const audioRef       = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef    = useRef<AudioContext | null>(null);
+  const analyserRef    = useRef<AnalyserNode | null>(null);
+  const animRef        = useRef<number | null>(null);
+  const chimeCtxRef    = useRef<AudioContext | null>(null);
   const interactionCleanupRef = useRef<(() => void) | null>(null);
 
-  /* ---- animation loop ---- */
-  function startViz() {
+  /* ---- mouth animation loop (synced to audio amplitude) ---- */
+  const startMouthSync = useCallback(() => {
     const analyser = analyserRef.current;
     const data     = analyser ? new Uint8Array(analyser.fftSize) : null;
 
     function frame() {
-      if (analyser && data) analyser.getByteTimeDomainData(data);
-
-      timeRef.current += 0.018;
-
-      if (data) {
+      if (analyser && data) {
+        analyser.getByteTimeDomainData(data);
         const rms = Math.sqrt(
           data.reduce((s, v) => s + Math.pow((v - 128) / 128, 2), 0) / data.length,
         );
-        ampRef.current = ampRef.current * 0.72 + rms * 0.28;
-      }
-
-      if (canvasRef.current) {
-        drawWave(
-          canvasRef.current,
-          true,
-          isDarkRef.current,
-          timeRef.current,
-          Math.min(ampRef.current * 14, 1),
-        );
+        // Map RMS to mouth openness (0–1), with smoothing
+        setMouthOpen((prev) => prev * 0.5 + Math.min(rms * 16, 1) * 0.5);
       }
       animRef.current = requestAnimationFrame(frame);
     }
     animRef.current = requestAnimationFrame(frame);
-  }
+  }, []);
 
-  function stopViz() {
+  function stopMouthSync() {
     if (animRef.current) {
       cancelAnimationFrame(animRef.current);
       animRef.current = null;
     }
-    ampRef.current = 0;
-    if (canvasRef.current) {
-      drawWave(canvasRef.current, false, isDarkRef.current, timeRef.current, 0);
-    }
+    setMouthOpen(0);
   }
 
   /* ---- playback ---- */
@@ -247,7 +235,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
         const ctx      = new AudioContext();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.88;
+        analyser.smoothingTimeConstant = 0.85;
         ctx.createMediaElementSource(audio).connect(analyser);
         analyser.connect(ctx.destination);
         audioCtxRef.current = ctx;
@@ -258,7 +246,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
       }
       await audio.play();
       setStatus("playing");
-      startViz();
+      startMouthSync();
     } catch {
       setStatus("blocked");
     }
@@ -266,32 +254,17 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function pause() {
     audioRef.current?.pause();
-    stopViz();
+    stopMouthSync();
     setStatus("paused");
-  }
-
-  /* ---- full intro sequence: chime → line → speech ---- */
-  function runIntro() {
-    // Clean up any existing listeners
-    interactionCleanupRef.current?.();
-
-    // Chime + line formation
-    playChime(chimeCtxRef);
-    setLineFormed(true);
-
-    // Speech after short delay
-    setTimeout(() => play(), 800);
   }
 
   /* ---- register listeners for first user interaction ---- */
   function waitForInteraction() {
     setStatus("blocked");
-    // Show the line immediately (visual-only, no audio)
-    setLineFormed(true);
+    setVisible(true); // Show Cit immediately, waiting for tap
 
     function onInteraction() {
       cleanup();
-      // User gesture context is now available — run full intro
       playChime(chimeCtxRef);
       play();
     }
@@ -309,46 +282,42 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   /* ---- lifecycle ---- */
   useEffect(() => {
-    // Set up the audio element
     const audio      = new Audio(AUDIO_SRC);
     audio.preload    = "auto";
     audioRef.current = audio;
     audio.onended    = () => {
-      stopViz();
+      stopMouthSync();
       setStatus("ended");
       onEnded?.();
     };
 
-    // Check if audio is allowed (user has previously interacted with the page)
     const allowed = canAutoplay();
 
     if (allowed) {
-      // User already interacted (e.g., came from within app via sign-out click)
-      // Run the full intro with timers
+      // Chime + fade in Cit
       const chimeT = setTimeout(() => {
         playChime(chimeCtxRef);
-        setLineFormed(true);
+        setVisible(true);
       }, CHIME_DELAY);
 
+      // Start speech
       const playT = setTimeout(() => play(), AUTOPLAY_DELAY);
 
       return () => {
         clearTimeout(chimeT);
         clearTimeout(playT);
         audio.pause();
-        stopViz();
+        stopMouthSync();
         audioCtxRef.current?.close();
         chimeCtxRef.current?.close();
         interactionCleanupRef.current?.();
       };
     } else {
-      // Fresh visit — no prior interaction. Set up listeners immediately
-      // so the FIRST click/tap/key anywhere on the page triggers the intro.
       waitForInteraction();
 
       return () => {
         audio.pause();
-        stopViz();
+        stopMouthSync();
         audioCtxRef.current?.close();
         chimeCtxRef.current?.close();
         interactionCleanupRef.current?.();
@@ -362,93 +331,46 @@ export function CitHero({ onEnded }: CitHeroProps) {
     else play();
   }
 
-  /* ---- derived state ---- */
-  const isPlaying = status === "playing";
-  const teal80    = isDark ? "rgba(0,212,170,0.8)" : "rgba(0,107,87,0.7)";
-  const teal60    = isDark ? "rgba(0,212,170,0.6)" : "rgba(0,107,87,0.5)";
-  const white90   = isDark ? "rgba(0,229,181,0.9)" : "rgba(0,155,120,0.8)";
-
-  // Formation: expands from center point
-  const lineClip = lineFormed ? "inset(0 0% 0 0%)" : "inset(0 50% 0 50%)";
-
   return (
     <div
       onClick={toggle}
       style={{
         position: "relative",
         width: "100%",
-        height: 100,
+        height: 300,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         cursor: "pointer",
-        clipPath: lineClip,
-        transition: `clip-path ${FORM_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
       }}
     >
-      {/* ── CSS gradient lines (the static line — preserved exactly) ── */}
+      {/* ── Cit character with fade-in ── */}
+      <div
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
+          transition: "opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          animation: visible && status !== "blocked" ? "citFloat 3s ease-in-out infinite" : "none",
+        }}
+      >
+        <CitCharacter
+          mouthOpen={mouthOpen}
+          isDark={isDark}
+          size={220}
+        />
+      </div>
 
-      {/* Outer blurred line */}
-      <div
-        style={{
-          position: "absolute", top: "50%", left: "8%", right: "8%",
-          height: 2, transform: "translateY(-50%)",
-          background: `linear-gradient(90deg, transparent, ${teal80}, transparent)`,
-          filter: "blur(1px)",
-          opacity: isPlaying ? 0 : 1,
-          transition: "opacity 0.5s ease",
-        }}
-      />
-      {/* Outer sharp line */}
-      <div
-        style={{
-          position: "absolute", top: "50%", left: "8%", right: "8%",
-          height: 1, transform: "translateY(-50%)",
-          background: `linear-gradient(90deg, transparent, ${teal60}, transparent)`,
-          opacity: isPlaying ? 0 : 1,
-          transition: "opacity 0.5s ease",
-        }}
-      />
-      {/* Center blurred hotspot */}
-      <div
-        style={{
-          position: "absolute", top: "50%", left: "30%", right: "30%",
-          height: 5, transform: "translateY(-50%)",
-          background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
-          filter: "blur(2px)",
-          opacity: isPlaying ? 0 : 1,
-          transition: "opacity 0.5s ease",
-        }}
-      />
-      {/* Center sharp hotspot */}
-      <div
-        style={{
-          position: "absolute", top: "50%", left: "30%", right: "30%",
-          height: 1, transform: "translateY(-50%)",
-          background: `linear-gradient(90deg, transparent, ${white90}, transparent)`,
-          opacity: isPlaying ? 0 : 1,
-          transition: "opacity 0.5s ease",
-        }}
-      />
-
-      {/* ── Canvas waveform (takes over seamlessly when Cit speaks) ── */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          opacity: isPlaying ? 1 : 0,
-          transition: "opacity 0.5s ease",
-        }}
-      />
-
-      {/* ── Blocked hint: subtle pulse when autoplay is blocked ── */}
+      {/* ── Blocked hint ── */}
       {status === "blocked" && (
         <div
           style={{
-            position: "absolute", top: "50%", left: "50%",
-            transform: "translate(-50%, -50%)",
-            fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+            position: "absolute",
+            bottom: 10,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
             color: isDark ? "rgba(0,212,170,0.5)" : "rgba(0,107,87,0.45)",
             fontFamily: "system-ui, sans-serif",
             animation: "citPulse 2s ease-in-out infinite",
@@ -456,9 +378,13 @@ export function CitHero({ onEnded }: CitHeroProps) {
           }}
         >
           tap to listen
-          <style>{`@keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }`}</style>
         </div>
       )}
+
+      <style>{`
+        @keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes citFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+      `}</style>
     </div>
   );
 }
