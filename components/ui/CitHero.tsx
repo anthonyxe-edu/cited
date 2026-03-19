@@ -42,21 +42,33 @@ function playChime(ref: React.MutableRefObject<AudioContext | null>) {
   } catch { /* best-effort */ }
 }
 
-/* ── Cit — fluid clay mascot ───────────────────────────────────────────────── */
-function CitCharacter({ mouthOpen, size = 260 }: { mouthOpen: number; size?: number }) {
+/* ── Cit cross head with expressive mouth ──────────────────────────────────── */
+function CitHead({ mouthOpen, mouthShape, size = 200 }: {
+  mouthOpen: number; // 0–1
+  mouthShape: number; // 0–1 drives shape variation (wide vs tall, smile vs O)
+  size?: number;
+}) {
   const BASE   = "#4B7D50";
   const LIGHT  = "#5A9460";
   const SHADOW = "#3D6842";
   const DEEP   = "#2F5233";
 
-  const mouthRx = 3.5 + mouthOpen * 1.5;
-  const mouthRy = 1.5 + mouthOpen * 3;
+  // Expressive mouth — blends between shapes based on amplitude + shape
+  // Wide smile (low amplitude), round O (high amplitude), asymmetric shapes in between
+  const baseRx = 4;
+  const baseRy = 1.8;
+  const openRx = baseRx + mouthOpen * 2.5 - mouthShape * mouthOpen * 1.5;
+  const openRy = baseRy + mouthOpen * 5 * (0.5 + mouthShape * 0.5);
+
+  // Smile curve: when mostly closed, show a curved smile. When open, round mouth.
+  const smileCurve = Math.max(0, 1 - mouthOpen * 3); // 1 when closed, 0 when open
+  const mouthCy = 72;
 
   return (
     <svg
       width={size}
-      height={size * 1.05}
-      viewBox="0 0 200 210"
+      height={size}
+      viewBox="0 0 140 140"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{ overflow: "visible" }}
@@ -67,169 +79,87 @@ function CitCharacter({ mouthOpen, size = 260 }: { mouthOpen: number; size?: num
           <stop offset="40%" stopColor={BASE} />
           <stop offset="100%" stopColor={SHADOW} />
         </linearGradient>
-        <linearGradient id="cGL" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={LIGHT} />
-          <stop offset="100%" stopColor={SHADOW} />
-        </linearGradient>
-        <filter id="cS"><feGaussianBlur stdDeviation="3" /></filter>
+        <filter id="cGlow">
+          <feGaussianBlur stdDeviation="6" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="cSoft"><feGaussianBlur stdDeviation="2" /></filter>
       </defs>
 
-      {/* Ground shadow (no disc) */}
-      <ellipse cx="100" cy="202" rx="34" ry="5" fill="rgba(0,0,0,0.07)" filter="url(#cS)" />
+      {/* Ambient glow */}
+      <circle cx="70" cy="70" r="50" fill="rgba(75,125,80,0.08)" filter="url(#cGlow)" />
 
-      {/* ══════ BODY — single fluid path: torso + hips + legs + feet ══════
-           Drawn as one continuous shape so there are NO seams.
-           Starts at left shoulder, goes down left side, left leg, foot,
-           crosses to right foot, right leg, up right side to right shoulder,
-           then curves across the top (chest). */}
-      <g className="cit-body">
-        <path
-          d={`
-            M 82,118
-            C 78,118 76,124 76,132
-            L 76,168
-            C 76,174 78,178 82,178
-            L 82,195
-            C 82,200 84,204 89,204
-            C 94,204 96,200 96,195
-            L 96,178
-            L 104,178
-            L 104,195
-            C 104,200 106,204 111,204
-            C 116,204 118,200 118,195
-            L 118,178
-            C 122,178 124,174 124,168
-            L 124,132
-            C 124,124 122,118 118,118
-            Z
-          `}
-          fill="url(#cG)"
-        />
-        {/* Torso highlight */}
-        <path
-          d="M 88,122 C 86,122 85,128 85,134 L 85,155 C 85,158 86,160 88,160 L 98,160 L 98,134 C 98,128 97,122 95,122 Z"
-          fill="rgba(255,255,255,0.06)"
-        />
-        {/* Feet — flush rounded ends */}
-        <ellipse cx="89" cy="203" rx="9" ry="5" fill={BASE} />
-        <ellipse cx="111" cy="203" rx="9" ry="5" fill={BASE} />
-      </g>
+      {/* ── Cross head ── */}
+      {/* Vertical bar */}
+      <rect x="52" y="10" width="36" height="100" rx="14" fill="url(#cG)" />
+      {/* Horizontal bar */}
+      <rect x="18" y="38" width="104" height="44" rx="14" fill="url(#cG)" />
 
-      {/* ══════ LEFT ARM (viewer's left) — waving, one fluid path ══════ */}
-      <g className="cit-wave-arm" style={{ transformOrigin: "80px 125px" }}>
-        <path
-          d={`
-            M 78,122
-            C 72,120 66,114 60,106
-            C 56,100 50,90 48,84
-            C 46,78 48,74 52,74
-            C 56,74 58,78 60,84
-            C 62,90 66,96 70,102
-            C 74,108 76,112 76,118
-            Z
-          `}
-          fill="url(#cGL)"
-        />
-        {/* Hand */}
-        <ellipse cx="50" cy="76" rx="7" ry="7.5" fill={BASE} />
-        {/* Fingers — flush with hand */}
-        <path
-          d="M 46,70 C 45,66 46,64 48,64 C 50,64 51,66 50,70 Z"
-          fill={LIGHT}
-        />
-        <path
-          d="M 50,68 C 49,64 50,62 52,62 C 54,62 55,64 54,68 Z"
-          fill={LIGHT}
-        />
-        <path
-          d="M 54,70 C 53,66 54,64 56,64 C 58,64 59,66 58,70 Z"
-          fill={LIGHT}
-        />
-      </g>
+      {/* Highlights — top-left light catch */}
+      <rect x="57" y="15" width="14" height="32" rx="7" fill="rgba(255,255,255,0.09)" />
+      <rect x="24" y="43" width="32" height="16" rx="8" fill="rgba(255,255,255,0.06)" />
 
-      {/* ══════ RIGHT ARM — relaxed, one fluid path ══════ */}
-      <g className="cit-rest-arm" style={{ transformOrigin: "120px 125px" }}>
+      {/* Depth shadows — bottom-right */}
+      <rect x="68" y="80" width="16" height="24" rx="8" fill="rgba(0,0,0,0.04)" />
+      <rect x="96" y="50" width="22" height="22" rx="10" fill="rgba(0,0,0,0.04)" />
+
+      {/* ── Expressive mouth ── */}
+      {smileCurve > 0.5 ? (
+        /* Closed / resting — gentle smile curve */
         <path
-          d={`
-            M 122,122
-            C 126,124 130,132 132,142
-            C 134,152 134,164 132,172
-            C 130,178 128,180 126,180
-            C 124,180 122,178 122,172
-            C 122,164 122,152 124,142
-            C 124,136 124,128 124,122
-            Z
-          `}
-          fill="url(#cGL)"
+          d={`M ${70 - 5} ${mouthCy - 0.5}
+              Q 70 ${mouthCy + 2.5 + smileCurve * 1.5} ${70 + 5} ${mouthCy - 0.5}`}
+          stroke="#3A2A20"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          fill="none"
         />
-        {/* Hand — flush fist */}
-        <ellipse cx="128" cy="178" rx="6" ry="6.5" fill={BASE} />
-      </g>
-
-      {/* ══════ NECK — flush bridge between torso and head ══════ */}
-      <path
-        d="M 92,118 C 92,112 94,108 100,108 C 106,108 108,112 108,118 L 108,122 L 92,122 Z"
-        fill={BASE}
-      />
-
-      {/* ══════ CROSS HEAD ══════ */}
-      <g className="cit-head" style={{ transformOrigin: "100px 70px" }}>
-        {/* Shadow under head */}
-        <ellipse cx="100" cy="110" rx="20" ry="3.5" fill="rgba(0,0,0,0.05)" filter="url(#cS)" />
-        {/* Vertical bar */}
-        <rect x="82" y="26" width="36" height="86" rx="13" fill="url(#cG)" />
-        {/* Horizontal bar */}
-        <rect x="56" y="46" width="88" height="36" rx="13" fill="url(#cG)" />
-        {/* Highlight — top-left */}
-        <rect x="87" y="31" width="14" height="28" rx="7" fill="rgba(255,255,255,0.08)" />
-        <rect x="62" y="51" width="28" height="14" rx="7" fill="rgba(255,255,255,0.06)" />
-        {/* Shadow — bottom-right */}
-        <rect x="96" y="84" width="18" height="22" rx="9" fill="rgba(0,0,0,0.04)" />
-        <rect x="114" y="58" width="24" height="16" rx="8" fill="rgba(0,0,0,0.04)" />
-        {/* Mouth */}
-        <ellipse cx="100" cy="96" rx={mouthRx} ry={mouthRy} fill="#3A2A20" stroke={DEEP} strokeWidth="0.8" />
-        {mouthOpen > 0.3 && (
-          <ellipse cx="100" cy={95.5 + mouthOpen} rx={mouthRx * 0.5} ry={mouthRy * 0.35} fill="#5A3A2A" />
-        )}
-      </g>
-
-      {/* ══════ IDLE ANIMATION STYLES ══════ */}
-      <style>{`
-        .cit-body {
-          animation: citSway 2.8s ease-in-out infinite;
-          transform-origin: 100px 170px;
-        }
-        .cit-head {
-          animation: citHeadTilt 3.2s ease-in-out infinite;
-        }
-        .cit-wave-arm {
-          animation: citWave 1.6s ease-in-out infinite;
-        }
-        .cit-rest-arm {
-          animation: citArmSwing 2.8s ease-in-out infinite;
-        }
-        @keyframes citSway {
-          0%, 100% { transform: rotate(0deg) translateX(0); }
-          30% { transform: rotate(1.2deg) translateX(2px); }
-          70% { transform: rotate(-1.2deg) translateX(-2px); }
-        }
-        @keyframes citHeadTilt {
-          0%, 100% { transform: rotate(0deg) translateY(0); }
-          25% { transform: rotate(-2deg) translateY(-1px); }
-          75% { transform: rotate(2.5deg) translateY(1px); }
-        }
-        @keyframes citWave {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-12deg); }
-          50% { transform: rotate(8deg); }
-          75% { transform: rotate(-8deg); }
-        }
-        @keyframes citArmSwing {
-          0%, 100% { transform: rotate(0deg); }
-          40% { transform: rotate(3deg); }
-          60% { transform: rotate(-2deg); }
-        }
-      `}</style>
+      ) : mouthOpen < 0.15 ? (
+        /* Nearly closed — thin line, slight curve */
+        <path
+          d={`M ${70 - 4.5} ${mouthCy}
+              Q 70 ${mouthCy + 1.5} ${70 + 4.5} ${mouthCy}`}
+          stroke="#3A2A20"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          fill="none"
+        />
+      ) : (
+        /* Open — organic blob shape, not a perfect ellipse */
+        <g>
+          <path
+            d={`M ${70 - openRx} ${mouthCy}
+                C ${70 - openRx} ${mouthCy - openRy * 0.8},
+                  ${70 + openRx} ${mouthCy - openRy * 0.6},
+                  ${70 + openRx} ${mouthCy}
+                C ${70 + openRx} ${mouthCy + openRy},
+                  ${70 - openRx} ${mouthCy + openRy * 1.1},
+                  ${70 - openRx} ${mouthCy}
+                Z`}
+            fill="#3A2A20"
+            stroke={DEEP}
+            strokeWidth="0.6"
+          />
+          {/* Tongue / inner highlight when wide open */}
+          {mouthOpen > 0.4 && (
+            <ellipse
+              cx={70}
+              cy={mouthCy + openRy * 0.3}
+              rx={openRx * 0.45}
+              ry={openRy * 0.25}
+              fill="#6B4A3A"
+            />
+          )}
+          {/* Top lip shadow */}
+          <path
+            d={`M ${70 - openRx + 1} ${mouthCy}
+                Q 70 ${mouthCy - openRy * 0.4} ${70 + openRx - 1} ${mouthCy}`}
+            stroke="rgba(0,0,0,0.08)"
+            strokeWidth="0.8"
+            fill="none"
+          />
+        </g>
+      )}
     </svg>
   );
 }
@@ -242,6 +172,8 @@ export function CitHero({ onEnded }: CitHeroProps) {
   const [status, setStatus] = useState<"idle"|"playing"|"paused"|"ended"|"blocked">("idle");
   const [visible, setVisible] = useState(false);
   const [mouthOpen, setMouthOpen] = useState(0);
+  const [mouthShape, setMouthShape] = useState(0);
+  const [introSpin, setIntroSpin] = useState(false);
 
   const audioRef    = useRef<HTMLAudioElement|null>(null);
   const audioCtxRef = useRef<AudioContext|null>(null);
@@ -253,11 +185,16 @@ export function CitHero({ onEnded }: CitHeroProps) {
   const startMouthSync = useCallback(() => {
     const analyser = analyserRef.current;
     const data = analyser ? new Uint8Array(analyser.fftSize) : null;
+    let t = 0;
     function frame() {
+      t += 0.016;
       if (analyser && data) {
         analyser.getByteTimeDomainData(data);
         const rms = Math.sqrt(data.reduce((s,v) => s + Math.pow((v-128)/128,2), 0) / data.length);
-        setMouthOpen(prev => prev * 0.45 + Math.min(rms * 18, 1) * 0.55);
+        const target = Math.min(rms * 18, 1);
+        setMouthOpen(prev => prev * 0.4 + target * 0.6);
+        // Shape oscillates independently — creates variety in mouth shapes
+        setMouthShape(Math.abs(Math.sin(t * 3.7)) * 0.6 + Math.abs(Math.sin(t * 1.9)) * 0.4);
       }
       animRef.current = requestAnimationFrame(frame);
     }
@@ -266,17 +203,16 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function stopMouthSync() {
     if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
-    setMouthOpen(0);
+    setMouthOpen(0); setMouthShape(0);
   }
 
   async function play() {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audio = audioRef.current; if (!audio) return;
     try {
       if (!audioCtxRef.current) {
         const ctx = new AudioContext();
         const analyser = ctx.createAnalyser();
-        analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.85;
+        analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.82;
         ctx.createMediaElementSource(audio).connect(analyser);
         analyser.connect(ctx.destination);
         audioCtxRef.current = ctx; analyserRef.current = analyser;
@@ -291,7 +227,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function waitForInteraction() {
     setStatus("blocked"); setVisible(true);
-    function onInteraction() { cleanup(); playChime(chimeCtxRef); play(); }
+    function onInteraction() { cleanup(); triggerIntro(); }
     function cleanup() {
       document.removeEventListener("click", onInteraction);
       document.removeEventListener("touchstart", onInteraction);
@@ -304,14 +240,22 @@ export function CitHero({ onEnded }: CitHeroProps) {
     interactionCleanupRef.current = cleanup;
   }
 
+  function triggerIntro() {
+    playChime(chimeCtxRef);
+    setIntroSpin(true);
+    setTimeout(() => { setIntroSpin(false); play(); }, 900);
+  }
+
   useEffect(() => {
     const audio = new Audio(AUDIO_SRC); audio.preload = "auto"; audioRef.current = audio;
     audio.onended = () => { stopMouthSync(); setStatus("ended"); onEnded?.(); };
     const allowed = canAutoplay();
     if (allowed) {
-      const chimeT = setTimeout(() => { playChime(chimeCtxRef); setVisible(true); }, CHIME_DELAY);
-      const playT = setTimeout(() => play(), AUTOPLAY_DELAY);
-      return () => { clearTimeout(chimeT); clearTimeout(playT); audio.pause(); stopMouthSync(); audioCtxRef.current?.close(); chimeCtxRef.current?.close(); interactionCleanupRef.current?.(); };
+      const chimeT = setTimeout(() => {
+        setVisible(true);
+        triggerIntro();
+      }, CHIME_DELAY);
+      return () => { clearTimeout(chimeT); audio.pause(); stopMouthSync(); audioCtxRef.current?.close(); chimeCtxRef.current?.close(); interactionCleanupRef.current?.(); };
     } else {
       waitForInteraction();
       return () => { audio.pause(); stopMouthSync(); audioCtxRef.current?.close(); chimeCtxRef.current?.close(); interactionCleanupRef.current?.(); };
@@ -321,18 +265,29 @@ export function CitHero({ onEnded }: CitHeroProps) {
 
   function toggle() { if (status === "playing") pause(); else play(); }
 
+  // Compose transform: intro spin, then idle wander
+  const introTransform = introSpin
+    ? "rotate(360deg) scale(1.1)"
+    : "";
+
   return (
-    <div onClick={toggle} style={{ position: "relative", width: "100%", height: 320, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+    <div onClick={toggle} style={{ position: "relative", width: "100%", height: 260, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
       <div style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0) scale(1)" : "translateY(30px) scale(0.85)",
-        transition: "opacity 1.4s cubic-bezier(0.16,1,0.3,1), transform 1.4s cubic-bezier(0.16,1,0.3,1)",
+        transition: introSpin
+          ? "opacity 0.4s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)"
+          : "opacity 1.2s cubic-bezier(0.16,1,0.3,1), transform 1.2s cubic-bezier(0.16,1,0.3,1)",
+        transform: visible
+          ? introTransform || "translateY(0) scale(1)"
+          : "translateY(30px) scale(0.7)",
+        animation: visible && !introSpin ? "citWander 6s ease-in-out infinite" : "none",
       }}>
-        <CitCharacter mouthOpen={mouthOpen} size={260} />
+        <CitHead mouthOpen={mouthOpen} mouthShape={mouthShape} size={200} />
       </div>
+
       {status === "blocked" && (
         <div style={{
-          position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)",
+          position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
           fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
           color: isDark ? "rgba(0,212,170,0.5)" : "rgba(0,107,87,0.45)",
           fontFamily: "system-ui, sans-serif", animation: "citPulse 2s ease-in-out infinite", whiteSpace: "nowrap",
@@ -340,7 +295,20 @@ export function CitHero({ onEnded }: CitHeroProps) {
           tap to listen
         </div>
       )}
-      <style>{`@keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }`}</style>
+
+      <style>{`
+        @keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes citWander {
+          0%   { transform: translate(0, 0) rotate(0deg); }
+          15%  { transform: translate(12px, -8px) rotate(3deg); }
+          30%  { transform: translate(-6px, -14px) rotate(-2deg); }
+          45%  { transform: translate(-16px, -4px) rotate(-4deg); }
+          60%  { transform: translate(4px, 6px) rotate(2deg); }
+          75%  { transform: translate(14px, -2px) rotate(3.5deg); }
+          90%  { transform: translate(-4px, -10px) rotate(-1.5deg); }
+          100% { transform: translate(0, 0) rotate(0deg); }
+        }
+      `}</style>
     </div>
   );
 }
