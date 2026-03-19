@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = "iP95p4xoKVk53GoZ742B"; // Chris - Charming, Down-to-Earth (free tier)
+const VOICE_ID = "TX3LPaxmHKxFdv7VOQHJ"; // Liam - Energetic, playful young male
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,9 +38,9 @@ ${text}`,
         text: coachScript,
         model_id: "eleven_turbo_v2_5",
         voice_settings: {
-          stability: 0.45,
-          similarity_boost: 0.80,
-          style: 0.35,
+          stability: 0.35,
+          similarity_boost: 0.85,
+          style: 0.55,
           use_speaker_boost: true,
         },
       }),
