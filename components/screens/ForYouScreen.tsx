@@ -5,6 +5,7 @@ import { Icon, IDs } from "@/components/ui/Icons";
 import { Dots } from "@/components/ui/Badges";
 import { Collapse } from "@/components/ui/Collapse";
 import { useTheme } from "@/lib/theme";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import type { Suggestion, Screen, UserProfile, SavedEntry } from "@/types";
 
 const CAT_COLORS: Record<string, { c: string; bg: string; icon: string }> = {
@@ -69,6 +70,7 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
 
       <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
         {!hasContext && (
+          <ScrollReveal>
           <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
             <div style={{ textAlign: "center", padding: "20px 10px" }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 6 }}>Get personalized suggestions</p>
@@ -79,9 +81,11 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
               </div>
             </div>
           </div>
+          </ScrollReveal>
         )}
 
         {hasContext && !suggestions && !loading && (
+          <ScrollReveal>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "20px 0" }}>
             <p style={{ fontSize: 14, color: C.ts, textAlign: "center", lineHeight: 1.5 }}>
               Based on your profile{recentSearches.length > 0 ? " and recent searches" : ""}, CITED can suggest personalized nutrition plans, workout ideas, and wellness tips.
@@ -90,6 +94,7 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
               <Icon d={IDs.sparkle} size={18} color="white" /> Generate My Suggestions
             </button>
           </div>
+          </ScrollReveal>
         )}
 
         {loading && (
@@ -112,6 +117,7 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
         {suggestions && (
           <>
             {/* Category filter */}
+            <ScrollReveal>
             <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
               {CATEGORIES.map((c) => {
                 const cat = CAT_COLORS[c] ?? { c: C.ts, bg: `${C.ts}15` };
@@ -123,12 +129,14 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
                 );
               })}
             </div>
+            </ScrollReveal>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {suggestions.filter(sg => catFilter === "All" || sg.category === catFilter).map((sg, i) => {
                 const cat = CAT_COLORS[sg.category] ?? CAT_COLORS.wellness;
                 const isExp = expanded === i;
                 return (
-                  <div key={i} style={{ background: C.surface, borderRadius: 14, border: `1px solid ${isExp ? cat.c + "40" : C.borderLight}`, overflow: "hidden", transition: "border-color 0.2s" }}>
+                  <ScrollReveal key={i} delay={i * 0.08}>
+                  <div style={{ background: C.surface, borderRadius: 14, border: `1px solid ${isExp ? cat.c + "40" : C.borderLight}`, overflow: "hidden", transition: "border-color 0.2s" }}>
                     <div onClick={() => setExpanded(isExp ? null : i)} style={{ padding: "14px 16px", cursor: "pointer" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 10, background: cat.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -160,6 +168,7 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
                       </div>
                     </Collapse>
                   </div>
+                  </ScrollReveal>
                 );
               })}
             </div>

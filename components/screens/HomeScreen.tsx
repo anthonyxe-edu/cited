@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Icon, IDs } from "@/components/ui/Icons";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon } from "lucide-react";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 // Category accent colors
 const CATEGORY_COLOR: Record<string, string> = {
@@ -121,7 +122,7 @@ export function HomeScreen({ onSearch, recentSearches, onClearRecent, prefillQue
   const filtered = activeTopic === "All" ? ALL_TRENDING : ALL_TRENDING.filter(t => t.topic === activeTopic);
 
   return (
-    <div className="cited-home" style={{ minHeight: "100vh", background: C.bg, paddingBottom: 90, fontFamily: "system-ui,-apple-system,sans-serif", position: "relative", overflow: "hidden" }}>
+    <div className="cited-home" style={{ minHeight: "100vh", background: C.bg, paddingBottom: 90, position: "relative", overflow: "hidden" }}>
 
       {/* Ambient glow orbs — fills the side thirds with personality */}
       <div style={{ position: "absolute", top: -80, left: -100, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(0,212,170,0.12) 0%,transparent 70%)", pointerEvents: "none" }} />
@@ -195,7 +196,7 @@ export function HomeScreen({ onSearch, recentSearches, onClearRecent, prefillQue
 
         {/* Recent searches */}
         {recentSearches.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
+          <ScrollReveal><div style={{ marginBottom: 28 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: C.tt, letterSpacing: "0.1em", textTransform: "uppercase" }}>Recent</span>
               <button onClick={onClearRecent} style={{ background: "none", border: "none", cursor: "pointer", color: C.tt, fontSize: 11, fontWeight: 600, padding: 0 }}>Clear</button>
@@ -209,7 +210,7 @@ export function HomeScreen({ onSearch, recentSearches, onClearRecent, prefillQue
                 </button>
               ))}
             </div>
-          </div>
+          </div></ScrollReveal>
         )}
 
         {/* Section heading + filter row */}
@@ -225,6 +226,7 @@ export function HomeScreen({ onSearch, recentSearches, onClearRecent, prefillQue
         </div>
 
         {/* Trending grid — auto-fill columns uses all the horizontal space */}
+        <ScrollReveal delay={0.1}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 10, marginBottom: 28 }}>
           {filtered.map((t, i) => {
             const color = CATEGORY_COLOR[t.topic];
@@ -243,8 +245,10 @@ export function HomeScreen({ onSearch, recentSearches, onClearRecent, prefillQue
             );
           })}
         </div>
+        </ScrollReveal>
 
         {/* Disclaimer */}
+        <ScrollReveal delay={0.2}>
         <div style={{ padding: "12px 16px", background: C.surfaceAlt, borderRadius: 12, border: `1px solid ${C.border}`, display: "flex", alignItems: "flex-start", gap: 10 }}>
           <div style={{ width: 18, height: 18, borderRadius: 5, background: "rgba(0,212,170,0.15)", border: "1px solid rgba(0,212,170,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
             <Icon d={IDs.info} size={10} color="#00D4AA" />
@@ -253,6 +257,7 @@ export function HomeScreen({ onSearch, recentSearches, onClearRecent, prefillQue
             <strong style={{ color: C.ts }}>Not medical advice.</strong> CITED is a peer-reviewed evidence research tool. Always consult a qualified healthcare professional before making health decisions.
           </p>
         </div>
+        </ScrollReveal>
       </div>
     </div>
   );

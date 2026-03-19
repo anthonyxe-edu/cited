@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        heading: ["'Helvetica Neue'", "Helvetica", "Arial", "sans-serif"],
+        body: ["system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "sans-serif"],
+      },
       colors: {
         primary: "#00D4AA",
         "primary-dark": "#00B894",

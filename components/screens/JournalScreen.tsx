@@ -5,6 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 import type { JournalEntry, EvidenceResult, UserProfile } from "@/types";
 import { CitedText } from "@/components/ui/CitedText";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 // ─── Speech recognition types ──────────────────────────────────────────────────
 interface SpeechRecognitionEvent extends Event {
@@ -912,8 +913,8 @@ export function JournalScreen({ profile }: JournalScreenProps) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 8 }}>
             {entries.map((entry, idx) => (
+              <ScrollReveal key={entry.id} delay={idx * 0.06}>
               <div
-                key={entry.id}
                 style={{
                   background: C.surface,
                   borderRadius: 16,
@@ -978,6 +979,7 @@ export function JournalScreen({ profile }: JournalScreenProps) {
                   </div>
                 </div>
               </div>
+              </ScrollReveal>
             ))}
           </div>
         )}

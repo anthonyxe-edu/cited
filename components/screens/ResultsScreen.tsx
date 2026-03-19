@@ -8,6 +8,7 @@ import { CITEDListen } from "@/components/ui/CITEDListen";
 import { ShareSheet } from "@/components/ui/ShareSheet";
 import { useTheme } from "@/lib/theme";
 import { Collapse } from "@/components/ui/Collapse";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import type { EvidenceResult, ContextQuestion, Source, UserProfile } from "@/types";
 
 interface TermDef { term: string; definition: string; }
@@ -266,6 +267,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
 
       <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
         {/* Hero */}
+        <ScrollReveal>
         <div style={{ background: `linear-gradient(135deg,${C.primaryDeep},${C.primaryDark})`, borderRadius: 16, padding: "18px 16px", color: "white" }}>
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>Your search</div>
           <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "inherit", marginBottom: 10, lineHeight: 1.3 }}>{query}</div>
@@ -283,11 +285,15 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             </div>
           )}
         </div>
+        </ScrollReveal>
 
         {/* Dr. CITED Listen */}
+        <ScrollReveal delay={0.08}>
         <CITEDListen text={speechText} query={query} />
+        </ScrollReveal>
 
         {/* Definition Bank */}
+        <ScrollReveal delay={0.16}>
         {(defTerms === null || defTerms.length > 0) && (
           <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden" }}>
             <button
@@ -339,8 +345,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             </Collapse>
           </div>
         )}
+        </ScrollReveal>
 
         {/* Evidence summary */}
+        <ScrollReveal delay={0.24}>
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <Icon d={IDs.bar} size={16} color={C.primary} />
@@ -350,8 +358,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             <CitedText text={r.evidence_summary} sources={r.sources ?? []} />
           </div>
         </div>
+        </ScrollReveal>
 
         {/* Personalized */}
+        <ScrollReveal delay={0.32}>
         <div style={{ background: C.surface, borderRadius: 16, border: `1.5px solid ${C.primary}40`, padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <Icon d={IDs.target} size={16} color={C.primary} />
@@ -361,8 +371,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             <CitedText text={r.personalized_interpretation} sources={r.sources ?? []} />
           </div>
         </div>
+        </ScrollReveal>
 
         {/* Context fit */}
+        <ScrollReveal delay={0.4}>
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <button onClick={() => toggle("fit")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -394,8 +406,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             </div>
           </Collapse>
         </div>
+        </ScrollReveal>
 
         {/* Evidence quality */}
+        <ScrollReveal>
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <button onClick={() => toggle("q")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -411,8 +425,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             </div>
           </Collapse>
         </div>
+        </ScrollReveal>
 
         {/* Practical steps */}
+        <ScrollReveal>
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <Icon d={IDs.zap} size={16} color={C.primary} />
@@ -427,8 +443,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             </div>
           ))}
         </div>
+        </ScrollReveal>
 
         {/* Sources */}
+        <ScrollReveal>
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <button onClick={() => toggle("src")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -459,8 +477,10 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             </div>
           </Collapse>
         </div>
+        </ScrollReveal>
 
         {/* Safety note */}
+        <ScrollReveal>
         <div style={{ background: C.accentLight, borderRadius: 12, padding: "12px 14px", border: `1px solid ${C.accent}30`, display: "flex", gap: 10, alignItems: "flex-start" }}>
           <Icon d={IDs.info} size={16} color={C.accent} style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
@@ -468,6 +488,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
             <p style={{ fontSize: 11, color: C.tt, margin: 0, lineHeight: 1.5 }}><strong>Not medical advice.</strong> Talk to a qualified healthcare professional before making changes to your health regimen.</p>
           </div>
         </div>
+        </ScrollReveal>
 
         {isGuest ? (
           <div style={{ marginTop: 4, background: `linear-gradient(135deg,${C.primaryDeep},#0F2A4A)`, borderRadius: 16, padding: "20px 18px", textAlign: "center" }}>
