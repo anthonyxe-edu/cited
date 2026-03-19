@@ -86,17 +86,25 @@ function WaveBars({ active, color }: { active?: boolean; color: string }) {
   );
 }
 
+const monoFont = "'Courier New', Courier, monospace";
+
 // ─── Entry type badge ─────────────────────────────────────────────────────────
-function EntryBadge({ type }: { type: "text" | "voice" }) {
+function EntryBadge({ type, isDark }: { type: "text" | "voice"; isDark: boolean }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
       fontSize: 9, fontWeight: 800, letterSpacing: "0.12em",
-      textTransform: "uppercase", fontFamily: "monospace",
+      textTransform: "uppercase",
       padding: "2px 7px", borderRadius: 4,
-      background: type === "voice" ? "rgba(0,212,170,0.12)" : "rgba(255,255,255,0.06)",
-      color: type === "voice" ? "#00D4AA" : "rgba(255,255,255,0.35)",
-      border: type === "voice" ? "1px solid rgba(0,212,170,0.25)" : "1px solid rgba(255,255,255,0.08)",
+      background: type === "voice"
+        ? "rgba(0,212,170,0.12)"
+        : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+      color: type === "voice"
+        ? "#00D4AA"
+        : isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)",
+      border: type === "voice"
+        ? "1px solid rgba(0,212,170,0.25)"
+        : isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
     }}>
       {type === "voice" ? (
         <><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> VOICE</>
@@ -115,7 +123,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 4 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, fontWeight: 800, color: "#00D4AA", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "monospace" }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#00D4AA", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: monoFont }}>
           AI ANALYSIS
         </span>
         <button
@@ -132,7 +140,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
         border: "1.5px solid rgba(0,212,170,0.22)",
         borderRadius: 14, padding: "16px 18px",
       }}>
-        <div style={{ fontSize: 10, fontWeight: 800, color: "#00D4AA", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "#00D4AA", letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: monoFont, marginBottom: 10 }}>
           FOR YOUR SITUATION
         </div>
         <div style={{ fontSize: 14, color: C.text, lineHeight: 1.8 }}>
@@ -143,7 +151,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
       {/* Practical steps */}
       {result.practical_steps?.length > 0 && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: C.tt, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: C.tt, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: monoFont, marginBottom: 12 }}>
             ACTION STEPS
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -153,7 +161,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
                   width: 22, height: 22, borderRadius: "50%", flexShrink: 0, marginTop: 1,
                   background: "linear-gradient(135deg,#00D4AA,#00B894)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 10, fontWeight: 800, color: "#0A1628", fontFamily: "monospace",
+                  fontSize: 10, fontWeight: 800, color: "#0A1628", fontFamily: monoFont,
                 }}>
                   {i + 1}
                 </div>
@@ -169,7 +177,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
       {/* Context fit */}
       {result.context_fit && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: C.tt, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 10 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: C.tt, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: monoFont, marginBottom: 10 }}>
             CONTEXT MATCH
           </div>
           {result.context_fit.matches?.map((m, i) => (
@@ -179,7 +187,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
           ))}
           {result.context_fit.track_next?.length > 0 && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 800, color: C.tt, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "monospace", margin: "12px 0 8px" }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: C.tt, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: monoFont, margin: "12px 0 8px" }}>
                 TRACK NEXT
               </div>
               {result.context_fit.track_next.map((t, i) => (
@@ -198,7 +206,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
         style={{
           background: "none", border: `1px solid ${C.border}`, borderRadius: 10,
           padding: "10px 14px", cursor: "pointer", fontSize: 12, color: C.tt,
-          fontFamily: "monospace", textAlign: "left", display: "flex",
+          fontFamily: monoFont, textAlign: "left", display: "flex",
           justifyContent: "space-between", alignItems: "center",
           letterSpacing: "0.05em",
         }}
@@ -219,7 +227,7 @@ function JournalResultCard({ result, onClose }: { result: EvidenceResult; onClos
                 <div style={{ fontSize: 11, color: C.tt, marginBottom: s.url ? 4 : 0 }}>{s.authors} · {s.year} · {s.journal}</div>
                 {s.url && (
                   <a href={s.url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 11, color: "#00D4AA", fontWeight: 700, fontFamily: "monospace", letterSpacing: "0.05em" }}>
+                    style={{ fontSize: 11, color: "#00D4AA", fontWeight: 700, fontFamily: monoFont, letterSpacing: "0.05em" }}>
                     OPEN ↗
                   </a>
                 )}
@@ -274,7 +282,7 @@ export function JournalScreen({ profile }: JournalScreenProps) {
 
   const inputBg     = isDark ? "rgba(255,255,255,0.05)" : "#F8FAFC";
   const inputBorder = isDark ? "rgba(255,255,255,0.1)"  : "#E2E8F0";
-  const monoFont    = "'Courier New', Courier, monospace";
+  // monoFont is defined at module scope
 
   // Load entries
   useEffect(() => {
@@ -437,7 +445,7 @@ export function JournalScreen({ profile }: JournalScreenProps) {
   // ────────────────────────────────────────────────────────────────────────────
   if (view === "compose" && !isDesktop) {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "system-ui,-apple-system,sans-serif", display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "inherit", display: "flex", flexDirection: "column" }}>
 
         {/* Compose header */}
         <div style={{
@@ -662,7 +670,7 @@ export function JournalScreen({ profile }: JournalScreenProps) {
   const showDesktopAsk     = isDesktop && view === "ask";
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "system-ui,-apple-system,sans-serif", display: isDesktop ? "flex" : "block", alignItems: "flex-start" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "inherit", display: isDesktop ? "flex" : "block", alignItems: "flex-start" }}>
 
       {/* ── Left panel (list) ── */}
       <div style={{
@@ -927,7 +935,7 @@ export function JournalScreen({ profile }: JournalScreenProps) {
                   {/* Top row: badge + timestamp + delete */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <EntryBadge type={entry.type} />
+                      <EntryBadge type={entry.type} isDark={isDark} />
                       <span style={{ fontSize: 10, color: C.tt, fontFamily: monoFont, letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
                         {formatDateStamp(entry.createdAt)} {formatTimeStamp(entry.createdAt)}
                       </span>

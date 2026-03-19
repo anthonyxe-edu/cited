@@ -63,7 +63,7 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
   return (
     <div style={{ minHeight: "100vh", background: C.bg, paddingBottom: 80 }}>
       <div style={{ background: `linear-gradient(135deg,#0A1628,#00B894)`, padding: "24px 18px 20px" }}>
-        <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: "white", fontFamily: "system-ui,sans-serif" }}>For You</h2>
+        <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: "white" }}>For You</h2>
         <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>Personalized suggestions based on your research</p>
       </div>
 
@@ -86,7 +86,7 @@ export function ForYouScreen({ profile, recentSearches, savedItems, onNav, onSea
             <p style={{ fontSize: 14, color: C.ts, textAlign: "center", lineHeight: 1.5 }}>
               Based on your profile{recentSearches.length > 0 ? " and recent searches" : ""}, CITED can suggest personalized nutrition plans, workout ideas, and wellness tips.
             </p>
-            <button onClick={generate} className="gradient-button" style={{ border: "none", borderRadius: 14, padding: "14px 32px", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: "system-ui,sans-serif", display: "flex", alignItems: "center", gap: 8, color: "white" }}>
+            <button onClick={generate} className="gradient-button" style={{ border: "none", borderRadius: 14, padding: "14px 32px", cursor: "pointer", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, color: "white" }}>
               <Icon d={IDs.sparkle} size={18} color="white" /> Generate My Suggestions
             </button>
           </div>

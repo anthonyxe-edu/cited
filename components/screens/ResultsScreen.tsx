@@ -157,7 +157,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
     return (
       <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 30 }}>
         <div style={{ width: 70, height: 70, borderRadius: 20, background: "linear-gradient(135deg,#0A1628,#132040)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, boxShadow: "0 4px 24px rgba(0,212,170,0.3)" }}>
-          <span style={{ fontSize: 34, fontWeight: 900, color: "#00D4AA", fontFamily: "system-ui,sans-serif" }}>✚</span>
+          <span style={{ fontSize: 34, fontWeight: 900, color: "#00D4AA", fontFamily: "inherit" }}>✚</span>
         </div>
         <Dots />
         <p style={{ color: C.ts, fontSize: 15, marginTop: 16, textAlign: "center" }}>{phase}</p>
@@ -199,7 +199,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
         <div style={{ padding: "20px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ background: `linear-gradient(135deg,${C.primaryDeep},#1E3A5F)`, borderRadius: 16, padding: "20px 18px", color: "white", textAlign: "center" }}>
             <div style={{ fontSize: 44, marginBottom: 10 }}>🔬</div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px", fontFamily: "system-ui,sans-serif" }}>We Don't Know Yet</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px", fontFamily: "inherit" }}>We Don't Know Yet</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.6, margin: 0 }}>
               Only {r.sourceCount ?? 0} peer-reviewed source{(r.sourceCount ?? 0) !== 1 ? "s" : ""} found. CITED requires at least 2 verified papers before presenting an evidence summary.
             </p>
@@ -268,7 +268,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
         {/* Hero */}
         <div style={{ background: `linear-gradient(135deg,${C.primaryDeep},${C.primaryDark})`, borderRadius: 16, padding: "18px 16px", color: "white" }}>
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>Your search</div>
-          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "system-ui,sans-serif", marginBottom: 10, lineHeight: 1.3 }}>{query}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "inherit", marginBottom: 10, lineHeight: 1.3 }}>{query}</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <EvBadge level={r.evidence_quality?.level ?? "Moderate"} />
             <Badge color="white" bg="rgba(255,255,255,0.15)">{verifiedCount} verified sources</Badge>
@@ -344,7 +344,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <Icon d={IDs.bar} size={16} color={C.primary} />
-            <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "system-ui,sans-serif" }}>What the Evidence Says</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>What the Evidence Says</span>
           </div>
           <div style={{ fontSize: 14, color: C.ts, lineHeight: 1.75 }}>
             <CitedText text={r.evidence_summary} sources={r.sources ?? []} />
@@ -355,7 +355,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
         <div style={{ background: C.surface, borderRadius: 16, border: `1.5px solid ${C.primary}40`, padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <Icon d={IDs.target} size={16} color={C.primary} />
-            <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "system-ui,sans-serif", color: C.primaryDark }}>How This Applies to You</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.primaryDark }}>How This Applies to You</span>
           </div>
           <div style={{ fontSize: 14, color: C.text, lineHeight: 1.75 }}>
             <CitedText text={r.personalized_interpretation} sources={r.sources ?? []} />
@@ -367,7 +367,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
           <button onClick={() => toggle("fit")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Icon d={IDs.eye} size={16} color={C.accent} />
-              <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "system-ui,sans-serif" }}>Context Fit</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Context Fit</span>
             </div>
             <Icon d={IDs.chevDown} size={18} color={C.tt} style={{ transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)", transform: exp.fit ? "rotate(180deg)" : "rotate(0)" }} />
           </button>
@@ -400,7 +400,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
           <button onClick={() => toggle("q")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Icon d={IDs.shield} size={16} color={C.success} />
-              <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "system-ui,sans-serif" }}>Evidence Quality</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Evidence Quality</span>
             </div>
             <Icon d={IDs.chevDown} size={18} color={C.tt} style={{ transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)", transform: exp.q ? "rotate(180deg)" : "rotate(0)" }} />
           </button>
@@ -416,7 +416,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
         <div style={{ background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <Icon d={IDs.zap} size={16} color={C.primary} />
-            <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "system-ui,sans-serif" }}>Practical Next Steps</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Practical Next Steps</span>
           </div>
           {r.practical_steps?.map((s, i) => (
             <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
@@ -433,7 +433,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
           <button onClick={() => toggle("src")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Icon d={IDs.book} size={16} color={C.primary} />
-              <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "system-ui,sans-serif" }}>Sources ({r.sources?.length ?? 0})</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Sources ({r.sources?.length ?? 0})</span>
             </div>
             <Icon d={IDs.chevDown} size={18} color={C.tt} style={{ transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)", transform: exp.src ? "rotate(180deg)" : "rotate(0)" }} />
           </button>
@@ -471,7 +471,7 @@ export function ResultsScreen({ query, answers, questions, profile, onBack, onHo
 
         {isGuest ? (
           <div style={{ marginTop: 4, background: `linear-gradient(135deg,${C.primaryDeep},#0F2A4A)`, borderRadius: 16, padding: "20px 18px", textAlign: "center" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "white", marginBottom: 6, fontFamily: "system-ui,sans-serif" }}>You've used your free preview</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "white", marginBottom: 6, fontFamily: "inherit" }}>You've used your free preview</div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginBottom: 16, lineHeight: 1.5 }}>Create an account to save results, search again, and unlock full personalized analysis.</div>
             <button onClick={onSelectPlan} style={{ width: "100%", background: C.primary, border: "none", borderRadius: 12, padding: "14px 0", cursor: "pointer", fontSize: 15, fontWeight: 700, color: "white" }}>
               Select a Plan

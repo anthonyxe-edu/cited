@@ -167,7 +167,6 @@ function GuestPaywall({ onCreateAccount, onSelectPlan }: { onCreateAccount: () =
         backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 24,
-        fontFamily: "system-ui, -apple-system, sans-serif",
       }}
     >
       <motion.div
@@ -454,7 +453,7 @@ function AppInner() {
       <>
         <GlobalBackground />
         <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1 }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "#00D4AA", fontFamily: "system-ui,sans-serif" }}>✚</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "#00D4AA" }}>✚</span>
         </div>
       </>
     );
@@ -511,7 +510,6 @@ function AppInner() {
           padding: "10px 18px",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           fontSize: 13, color: "#0A1628", fontWeight: 600,
-          fontFamily: "system-ui, sans-serif",
           gap: 12,
         }}>
           <span>Free preview. Create an account to save results and continue searching.</span>
