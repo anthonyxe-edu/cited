@@ -271,6 +271,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
     <div onClick={toggle} style={{ position: "relative", width: "100%", height: 340, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
       <div
         style={{
+          transformOrigin: "center center",
           animation: visible
             ? introSpin
               ? "citPopIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards"
@@ -297,12 +298,12 @@ export function CitHero({ onEnded }: CitHeroProps) {
       <style>{`
         @keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
         @keyframes citPopIn {
-          0%   { opacity: 0; transform: scale(0) translateY(60px) rotate(0deg); }
-          30%  { opacity: 1; transform: scale(1.15) translateY(-10px) rotate(540deg); }
-          55%  { transform: scale(0.95) translateY(4px) rotate(900deg); }
-          70%  { transform: scale(1.05) translateY(-2px) rotate(1020deg); }
-          85%  { transform: scale(0.98) translateY(1px) rotate(1070deg); }
-          100% { opacity: 1; transform: scale(1) translateY(0) rotate(1080deg); }
+          0%   { opacity: 0; transform: scale(0) rotate(0deg); }
+          25%  { opacity: 1; transform: scale(1.2) rotate(540deg); }
+          50%  { transform: scale(0.92) rotate(900deg); }
+          70%  { transform: scale(1.08) rotate(1020deg); }
+          85%  { transform: scale(0.97) rotate(1060deg); }
+          100% { opacity: 1; transform: scale(1) rotate(1080deg); }
         }
         @keyframes citWander {
           0%   { transform: translate(0, 0) rotate(0deg); }
