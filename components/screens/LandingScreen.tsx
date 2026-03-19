@@ -9,6 +9,7 @@ import NumberFlow from "@number-flow/react";
 import confetti from "canvas-confetti";
 import { CitHero } from "@/components/ui/CitHero";
 import { SparklesCore } from "@/components/ui/sparkles";
+import { GooeyText } from "@/components/ui/gooey-text-morphing";
 
 interface LandingScreenProps {
   onSelectPlan: (plan: "free" | "basic" | "pro") => void;
@@ -544,17 +545,29 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
 
   if (view === "how-it-works") {
     return (
-      <div className="cited-landing">
+      <motion.div
+        key="how-it-works"
+        initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] as [number, number, number, number] }}
+        className="cited-landing"
+      >
         <HowItWorksView onBack={() => setView("home")} />
-      </div>
+      </motion.div>
     );
   }
 
   if (view === "plans") {
     return (
-      <div className="cited-landing">
+      <motion.div
+        key="plans"
+        initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] as [number, number, number, number] }}
+        className="cited-landing"
+      >
         <PlansView onSelectPlan={onSelectPlan} onBack={() => setView("home")} />
-      </div>
+      </motion.div>
     );
   }
 
@@ -782,18 +795,43 @@ export function LandingScreen({ onSelectPlan, onSearch, onSignIn, initialView = 
           <Reveal delay={0.45} y={16}>
             <form onSubmit={handleSubmit} style={{ width: "min(560px, 90vw)" }}>
               <div style={{
-                display: "flex", gap: 8,
+                display: "flex", gap: 8, position: "relative",
                 background: inputBg, border: `1px solid ${inputBorder}`,
                 borderRadius: 18, padding: "6px 6px 6px 22px",
               }}>
+                {/* Morphing placeholder — visible only when input is empty */}
+                {!query && (
+                  <div style={{
+                    position: "absolute", top: 0, left: 22, right: 100, bottom: 0,
+                    display: "flex", alignItems: "center",
+                    pointerEvents: "none", zIndex: 0,
+                    color: isDark ? "#5a7a8a" : "#8a9aaa",
+                  }}>
+                    <GooeyText
+                      texts={[
+                        "Does creatine actually build muscle?",
+                        "Best supplements for deep sleep",
+                        "Is intermittent fasting backed by science?",
+                        "How much protein do I really need?",
+                        "Does cold exposure speed recovery?",
+                        "Omega-3 dosage for heart health",
+                      ]}
+                      morphTime={1.5}
+                      cooldownTime={3}
+                      className="h-full w-full"
+                      textClassName="text-[16px] font-normal"
+                    />
+                  </div>
+                )}
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="e.g. Does magnesium improve sleep quality?"
+                  placeholder=""
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
                     color: inputText, fontSize: 16, padding: "11px 0", minWidth: 0,
+                    position: "relative", zIndex: 1,
                   }}
                   autoFocus
                 />

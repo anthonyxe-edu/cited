@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { AnimatePresence, motion } from "framer-motion";
 import { NavBar } from "@/components/ui/NavBar";
 import { AuthScreen } from "@/components/screens/AuthScreen";
 import { LandingScreen } from "@/components/screens/LandingScreen";
@@ -20,6 +21,42 @@ import { ShareSheet } from "@/components/ui/ShareSheet";
 import { EvBadge, Badge, VerifiedBadge, DbBadge } from "@/components/ui/Badges";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Icon, IDs } from "@/components/ui/Icons";
+
+/* ── Page transition variants ──────────────────────────────────────────────── */
+const pageVariants = {
+  initial: { opacity: 0, y: 18, filter: "blur(4px)" },
+  animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+  exit:    { opacity: 0, y: -12, filter: "blur(3px)" },
+};
+const pageTransition = {
+  duration: 0.35,
+  ease: [0.25, 0.8, 0.25, 1] as [number, number, number, number],
+};
+
+/* Wrapper that applies the transition to any screen */
+function PageWrap({ children, screenKey }: { children: React.ReactNode; screenKey: string }) {
+  return (
+    <motion.div
+      key={screenKey}
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={pageTransition}
+      style={{ width: "100%", minHeight: "100vh" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* Landing / Auth use a softer crossfade (no vertical slide) */
+const fadeVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit:    { opacity: 0 },
+};
+const fadeTransition = { duration: 0.4, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] };
 
 function SavedView({ item, onBack }: { item: SavedEntry; onBack: () => void }) {
   const { C } = useTheme();
@@ -315,10 +352,33 @@ function AppInner() {
   }
 
   if (!user && !guestMode) {
-    if (showLanding) {
-      return <LandingScreen onSelectPlan={handleSelectPlan} onSearch={handleLandingSearch} initialView={landingInitialView} onSignIn={() => setShowLanding(false)} />;
-    }
-    return <AuthScreen onAuthed={() => {}} />;
+    return (
+      <AnimatePresence mode="wait">
+        {showLanding ? (
+          <motion.div
+            key="landing"
+            variants={fadeVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={fadeTransition}
+          >
+            <LandingScreen onSelectPlan={handleSelectPlan} onSearch={handleLandingSearch} initialView={landingInitialView} onSignIn={() => setShowLanding(false)} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="auth"
+            variants={fadeVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={fadeTransition}
+          >
+            <AuthScreen onAuthed={() => {}} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
   }
 
   const activeNav: Screen =
@@ -360,67 +420,71 @@ function AppInner() {
         </div>
       )}
 
-      {screen === "home" && (
-        <HomeScreen
-          onSearch={search}
-          recentSearches={recentSearches}
-          prefillQuery={prefillQuery}
-          onClearRecent={() => {
-            setRecentSearches([]);
-            try { localStorage.removeItem("cited-recent"); } catch {}
-          }}
-        />
-      )}
+      <AnimatePresence mode="wait">
+        <PageWrap screenKey={screen} key={screen}>
+          {screen === "home" && (
+            <HomeScreen
+              onSearch={search}
+              recentSearches={recentSearches}
+              prefillQuery={prefillQuery}
+              onClearRecent={() => {
+                setRecentSearches([]);
+                try { localStorage.removeItem("cited-recent"); } catch {}
+              }}
+            />
+          )}
 
-      {screen === "context" && (
-        <ContextScreen
-          query={query}
-          profile={profile}
-          onSubmit={(ans, qs) => { setAnswers(ans); setQuestions(qs); setScreen("results"); }}
-          onBack={() => setScreen("home")}
-        />
-      )}
+          {screen === "context" && (
+            <ContextScreen
+              query={query}
+              profile={profile}
+              onSubmit={(ans, qs) => { setAnswers(ans); setQuestions(qs); setScreen("results"); }}
+              onBack={() => setScreen("home")}
+            />
+          )}
 
-      {screen === "results" && (
-        <ResultsScreen
-          query={query}
-          answers={answers}
-          questions={questions}
-          profile={profile}
-          onBack={() => setScreen("context")}
-          onHome={() => setScreen("home")}
-          onSave={save}
-          isGuest={guestMode && !user}
-          onSelectPlan={handleGuestSelectPlan}
-        />
-      )}
+          {screen === "results" && (
+            <ResultsScreen
+              query={query}
+              answers={answers}
+              questions={questions}
+              profile={profile}
+              onBack={() => setScreen("context")}
+              onHome={() => setScreen("home")}
+              onSave={save}
+              isGuest={guestMode && !user}
+              onSelectPlan={handleGuestSelectPlan}
+            />
+          )}
 
-      {screen === "journal" && (
-        <JournalScreen profile={profile} />
-      )}
+          {screen === "journal" && (
+            <JournalScreen profile={profile} />
+          )}
 
-      {screen === "viewSaved" && viewItem && (
-        <SavedView item={viewItem} onBack={() => setScreen("journal")} />
-      )}
+          {screen === "viewSaved" && viewItem && (
+            <SavedView item={viewItem} onBack={() => setScreen("journal")} />
+          )}
 
-      {screen === "foryou" && (
-        <ForYouScreen
-          profile={profile}
-          recentSearches={recentSearches}
-          savedItems={savedItems}
-          onNav={nav}
-          onSearch={suggest}
-        />
-      )}
+          {screen === "foryou" && (
+            <ForYouScreen
+              profile={profile}
+              recentSearches={recentSearches}
+              savedItems={savedItems}
+              onNav={nav}
+              onSearch={suggest}
+            />
+          )}
 
-      {screen === "profile" && (
-        <ProfileScreen
-          profile={profile}
-          onSave={saveProfile}
-          onLogout={logout}
-          userEmail={user?.email}
-        />
-      )}
+          {screen === "profile" && (
+            <ProfileScreen
+              profile={profile}
+              onSave={saveProfile}
+              onLogout={logout}
+              userEmail={user?.email}
+            />
+          )}
+        </PageWrap>
+      </AnimatePresence>
 
       <NavBar screen={activeNav} onNav={nav} />
     </>

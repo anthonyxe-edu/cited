@@ -257,6 +257,22 @@ export function CitHero({ onEnded }: CitHeroProps) {
     setStatus("paused");
   }
 
+  /* ---- attempt play (with autoplay-policy fallback) ---- */
+  const hasTriedRef = useRef(false);
+  const interactionCleanupRef = useRef<(() => void) | null>(null);
+
+  function attemptPlay() {
+    if (hasTriedRef.current && status !== "blocked") return;
+    hasTriedRef.current = true;
+
+    // Chime + line formation
+    playChime(chimeCtxRef);
+    setLineFormed(true);
+
+    // Audio play
+    play();
+  }
+
   /* ---- lifecycle ---- */
   useEffect(() => {
     // Phase 1: chime + line formation
@@ -274,7 +290,45 @@ export function CitHero({ onEnded }: CitHeroProps) {
       setStatus("ended");
       onEnded?.();
     };
-    const playT = setTimeout(() => play(), AUTOPLAY_DELAY);
+    const playT = setTimeout(async () => {
+      try {
+        if (!audioCtxRef.current) {
+          const ctx      = new AudioContext();
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 2048;
+          analyser.smoothingTimeConstant = 0.88;
+          ctx.createMediaElementSource(audio).connect(analyser);
+          analyser.connect(ctx.destination);
+          audioCtxRef.current = ctx;
+          analyserRef.current = analyser;
+        }
+        if (audioCtxRef.current.state === "suspended") {
+          await audioCtxRef.current.resume();
+        }
+        await audio.play();
+        setStatus("playing");
+        startViz();
+      } catch {
+        // Autoplay blocked — wait for ANY user interaction, then play
+        setStatus("blocked");
+        function onInteraction() {
+          cleanup();
+          // Re-attempt with user gesture context
+          playChime(chimeCtxRef);
+          play();
+        }
+        function cleanup() {
+          document.removeEventListener("click", onInteraction);
+          document.removeEventListener("touchstart", onInteraction);
+          document.removeEventListener("keydown", onInteraction);
+          interactionCleanupRef.current = null;
+        }
+        document.addEventListener("click", onInteraction, { once: true });
+        document.addEventListener("touchstart", onInteraction, { once: true });
+        document.addEventListener("keydown", onInteraction, { once: true });
+        interactionCleanupRef.current = cleanup;
+      }
+    }, AUTOPLAY_DELAY);
 
     return () => {
       clearTimeout(chimeT);
@@ -283,6 +337,7 @@ export function CitHero({ onEnded }: CitHeroProps) {
       stopViz();
       audioCtxRef.current?.close();
       chimeCtxRef.current?.close();
+      interactionCleanupRef.current?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -371,6 +426,24 @@ export function CitHero({ onEnded }: CitHeroProps) {
           transition: "opacity 0.5s ease",
         }}
       />
+
+      {/* ── Blocked hint: subtle pulse when autoplay is blocked ── */}
+      {status === "blocked" && (
+        <div
+          style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+            color: isDark ? "rgba(0,212,170,0.5)" : "rgba(0,107,87,0.45)",
+            fontFamily: "system-ui, sans-serif",
+            animation: "citPulse 2s ease-in-out infinite",
+            whiteSpace: "nowrap",
+          }}
+        >
+          tap to listen
+          <style>{`@keyframes citPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }`}</style>
+        </div>
+      )}
     </div>
   );
 }
